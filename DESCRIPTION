@@ -1,0 +1,27 @@
+Package: ggpathdiagramr
+Title: Makes path diagrams
+Version: 0.0.0.9000
+Authors@R: c(
+    person(given = "W. Joel",
+           family = "Schneider",
+           role = c("aut", "cre"),
+           email = "w.joel.schneider@gmail.com",
+           comment = c(ORCID = "0000-0002-8393-5316"))
+  )
+Description: Makes path diagrams for path analysis and structural equation models.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.1
+Imports: 
+    S7 (>= 0.0.0.9000)
+Remotes: 
+    https://github.com/rconsortium/OOP-WG
+Collate: 
+    'zzz.R'
+    'helpers.R'
+    'shapes.R'
+    'generics.R'
+Suggests: 
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3
