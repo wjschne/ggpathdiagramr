@@ -4,7 +4,12 @@
 \alias{point}
 \title{point class}
 \usage{
-point(x = S7::class_missing, y = S7::class_missing)
+point(
+  x = S7::class_missing,
+  y = S7::class_missing,
+  angle = S7::class_missing,
+  distance = S7::class_missing
+)
 }
 \description{
 point class

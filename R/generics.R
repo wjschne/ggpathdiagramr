@@ -32,10 +32,10 @@
 distance <- S7::new_generic("distance", c("x", "y"))
 S7::method(distance, list(point, point)) <- function(x,y) {
   d <- (y - x)
-  sqrt(d@x ^ 2 + d@y ^ 2)
+  d@distance
 }
 S7::method(distance, list(point, S7::class_missing)) <- function(x,y) {
-  sqrt(x@x ^ 2 + x@y ^ 2)
+  x@distance
 }
 S7::method(distance, list(point, line)) <- function(x,y) {
   abs(y@intercept + y@slope * x@x - x@y) / sqrt(1 + y@slope ^ 2)
@@ -93,12 +93,12 @@ S7::method(distance, list(circle, point)) <- function(x,y, center = FALSE) {
 #' angle(l1, l2)
 #'
 angle <- S7::new_generic("angle", c("x", 'y'))
+S7::method(angle, list(point, S7::class_missing)) <- function(x, y) {
+  atan2(x@y, x@x)
+}
 S7::method(angle, list(point, point)) <- function(x, y) {
   d <- y - x
   atan2(d@y, d@x)
-}
-S7::method(angle, list(point, S7::class_missing)) <- function(x, y) {
-  atan2(x@y, x@x)
 }
 
 S7::method(angle, list(segment, S7::class_missing)) <-
@@ -109,12 +109,23 @@ S7::method(angle, list(line, S7::class_missing)) <- function(x, y) {
   x@angle
 }
 S7::method(angle, list(line, line)) <- function(x, y) {
-  atan(y@slope) - atan(x@slope)
+  y@angle - x@angle
 
 }
 S7::method(angle, list(segment, segment)) <- function(x, y) {
-  y@angle - x@angle
-
+  if (length(intersection(x,y)) > 0) {
+    y@line@angle - x@line@angle
+  } else NA_real_
+}
+S7::method(angle, list(line, segment)) <- function(x, y) {
+  if (length(intersection(x,y)) > 0) {
+    y@angle - x@line@angle
+  } else NA_real_
+}
+S7::method(angle, list(segment, line)) <- function(x, y) {
+  if (length(intersection(x,y)) > 0) {
+    y@line@angle - x@angle
+  } else NA_real_
 }
 
 
@@ -293,6 +304,21 @@ S7::method(intersection, list(segment, point)) <- function(x, y) {
   intersection(y, x)
 }
 
+# Perpendicular
+
+#' Find point perpendicular to 2 points
+#'
+#' @param e1 first point
+#' @param e2 second point
+#' @export
+`%|-%` <- S7::new_generic("%|-%", c("e1", "e2"))
+S7::method(`%|-%`, list(point, point)) <- function(e1,e2) {
+  point(e1@x, e2@y)}
+
+`%-|%` <- S7::new_generic("%-|%", c("e1", "e2"))
+S7::method(`%-|%`, list(point, point)) <- function(e1,e2) {
+  point(e2@x, e1@y)}
+
 
 
 # Rotate ----
@@ -341,9 +367,12 @@ S7::method(make_node, list(point, S7::class_character)) <- function(x,y) {
   node(x = x@x, y = x@y, label = y)
 }
 
-
+library(grid)
 # Plot ----
-#' @export
-plot.segment <- function(x,y) {
-  plot(x@xy)
+S7::method(plot, circle) <- function(x) {
+  mycircle <- circleGrob(x = x@center@x, y = x@center@y, r = x@radius, gp = gpar(col = "gray", lty = 1, fill = "black") )
+  mycircle
 }
+# plot(segment(point(1,2), point(4,5)))
+plot(circle(point(4,5), radius = 2))
+grid.draw(plot(circle(point(.5,.5), radius = .1)))

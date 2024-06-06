@@ -1,3 +1,7 @@
+
+
+
+
 # Point----
 
 #' point class
@@ -8,34 +12,55 @@ point <- S7::new_class(
   properties = list(
     x = S7::new_property(class = S7::class_numeric, default = 0),
     y = S7::new_property(class = S7::class_numeric, default = 0),
-    # slope = S7::new_property(
-    #   getter = function(self)
-    #     self@y / self@x
-    # ),
-    # angle = S7::new_property(
-    #   getter = function(self)
-    #     atan2(self@y, self@x)
-    # ),
-    # distance = S7::new_property(
-    #   getter = function(self) sqrt(self@x ^ 2 + self@y ^ 2)
-    #
-    # ),
+    slope = S7::new_property(
+      getter = function(self)
+        self@y / self@x
+    ),
+    angle = S7::new_property(
+      getter = function(self)
+        atan2(self@y, self@x)
+    ),
+    distance = S7::new_property(
+      getter = function(self) sqrt(self@x ^ 2 + self@y ^ 2)
+
+    ),
     xy = S7::new_property(
       getter = function(self) matrix(c(self@x, self@y), ncol = 2, dimnames = list(NULL, c("x", "y")))
     )
   ),
   validator = function(self) {
-    if (length(self@x) > 1)
+    if (length(self@x) > 1) {
       stop("x must not have more than 1 element.")
-
-    if (length(self@y) > 1)
+    }
+    if (length(self@y) > 1) {
       stop("y must not have more than 1 element.")
+    }
+
   },
   constructor = function(x = S7::class_missing,
-                         y = S7::class_missing) {
+                         y = S7::class_missing,
+                         angle = S7::class_missing,
+                         distance = S7::class_missing) {
     if (length(x) == 2 & length(y) == 0) {
       y <- x[2]
       x <- x[1]
+    }
+    if (length(x) == 0 & length(y) == 0 & length(angle) == 1 & length(distance) == 1) {
+     x = distance * cos(angle)
+     y = distance * sin(angle)
+    }
+
+    manyxy <- length(x) > 1 & length(y) == length(x)
+    manyx <- length(x) > 1 & length(y) == 1
+    manyy <- length(y) > 1 & length(x) == 1
+
+    if (any(manyxy, manyx, manyy)) {
+      d <- cbind(x, y)
+      return(apply(d, 1, \(r) {
+        names(r) <- NULL
+        point(x = r[1], y = r[2])
+        }
+                   ))
     }
     S7::new_object(S7::S7_object(), x = x, y = y)
   }
@@ -65,8 +90,6 @@ S7::method(`*`, list(point, S7::class_numeric)) <- function(e1,e2) {
   point(e1@x * e2, e1@x * e2)}
 S7::method(`/`, list(point, S7::class_numeric)) <- function(e1,e2) {
   point(e1@x / x, e1@x / e2)}
-
-
 # Node----
 
 #' node class
@@ -98,21 +121,6 @@ S7::method(`-`, list(node, node)) <- function(e1,e2) {
 S7::method(`+`, list(node, node)) <- function(e1,e2) {
   node(e1@x + e2@x, e1@y + e2@y, label = paste0(e1@label, " + ", e2@label))
 }
-
-# Radial Point----
-#' rpoint class
-#'
-#' @export
-rpoint <- S7::new_class(
-  name = "rpoint",
-  parent = point,
-  properties = list(r = S7::new_property(S7::class_double, default = 0),
-                    theta = S7::new_property(S7::class_double, default = 0)),
-  constructor = function(r = S7::class_missing,
-                         theta = S7::class_missing) {
-                        p <- point(x = r * cos(theta), y = r * sin(theta))
-                        S7::new_object(p, r = r, theta = theta)
-                      })
 
 # Line----
 
@@ -305,6 +313,22 @@ circle <- S7::new_class(
   )
 )
 
+S7::method(`+`, list(circle, point)) <- function(e1,e2) {
+  circle(e1@center + e2, e1@radius)
+}
+
+S7::method(`-`, list(circle, point)) <- function(e1,e2) {
+  circle(e1@center - e2, e1@radius)
+}
+
+S7::method(`+`, list(point, circle)) <- function(e1,e2) {
+  circle(e2@center + e1, e2@radius)
+}
+
+S7::method(`-`, list(point, circle)) <- function(e1,e2) {
+  circle(e1 - e2@center, e2@radius)
+}
+
 
 # Ellipse ----
 
@@ -319,7 +343,7 @@ ellipse <- S7::new_class(
     b = S7::new_property(S7::class_numeric, default = 1),
     theta  = S7::new_property(S7::class_numeric, default = 0),
     n = S7::new_property(S7::class_numeric, default = 360),
-    points = S7::new_property(
+    xy = S7::new_property(
       getter = function(self) {
         t <- seq(0, 2 * pi, length.out = self@n + 1)[-(self@n + 1)]
         xy <- cbind(x = self@a * cos(t),

@@ -1,6 +1,37 @@
 library(ggpathdiagramr)
 library(testthat)
 
+test_that("constructor", {
+  aa <- point(c(2, 2, 3), c(4, 1, 3))
+  bb <- c(point(2, 4), point(2, 1), point(3, 3))
+  cc <- point(x = c(2, 3), y = 1)
+  dd <- point(x = 1, y = c(2, 2))
+  expect_identical(aa, bb)
+  expect_identical(point(c(2,2)), point(2,2))
+  expect_identical(point(distance = 1, angle = 0), point(x = 1, y = 0))
+})
+
+
+test_that("adding",{
+  p1 <- point(1,1)
+  p2 <- point(3,4)
+  p3 <- point(4,5)
+  expect_identical(p1 + p2, p3)
+  expect_identical(p3 - p2, p1)
+  expect_identical(segment(p1, p2) + p3, segment(p1 + p3, p2 + p3))
+  expect_identical(p3 + segment(p1, p2), segment(p1 + p3, p2 + p3))
+  expect_identical(p3 - segment(p1, p2), segment(p3 - p1, p3 - p2))
+  expect_identical(circle(p1, 2) + p2, circle(p1 + p2, 2))
+  expect_identical(circle(p1, 2) - p2, circle(p1 - p2, 2))
+  expect_identical(p2 + circle(p1, 2), circle(p1 + p2, 2))
+  expect_identical(p2 - circle(p1, 2), circle(p2 - p1, 2))
+})
+
+test_that("perpendicular", {
+  expect_identical(point(0,0) %-|% point(2,2), point(2,0))
+  expect_identical(point(0,0) %|-% point(2,2), point(0,2))
+})
+
 test_that("distances", {
   p0 <- point(0,3)
   p1 <- point(1,1)
@@ -12,6 +43,24 @@ test_that("distances", {
   c2 <- circle(p2, radius = 2)
   expect_equal(distance(p0), 3)
   expect_equal(distance(p1, p2), 5)
+  expect_equal(distance(s1), 5)
+  expect_equal(distance(c1, c2), 2)
+  expect_equal(distance(c1, c2, center = TRUE), 5)
+  expect_equal(distance(c1, c1), 0)
+})
+
+
+test_that("angle", {
+  p0 <- point(0,3)
+  p1 <- point(1,1)
+  p2 <- point(4,5)
+  n1 <- node(p1, label = "A")
+  n2 <- node(p2, "B")
+  s1 <- segment(p1, p2)
+  c1 <- circle(p1, radius = 1)
+  c2 <- circle(p2, radius = 2)
+  expect_equal(angle(p0), pi/2)
+  expect_equal(angle(point(1,4), point(2,5)), pi/4)
   expect_equal(distance(s1), 5)
   expect_equal(distance(c1, c2), 2)
   expect_equal(distance(c1, c2, center = TRUE), 5)
