@@ -26,3 +26,5 @@ Collate:
     'shapes.R'
     'generics.R'
 VignetteBuilder: knitr
+URL: https://github.com/wjschne/ggpathdiagramr
+BugReports: https://github.com/wjschne/ggpathdiagramr/issues
