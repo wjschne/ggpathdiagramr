@@ -2,9 +2,12 @@
 % Please edit documentation in R/generics.R
 \name{\%|-\%}
 \alias{\%|-\%}
+\alias{\%-|\%}
 \title{Find point perpendicular to 2 points}
 \usage{
 e1 \%|-\% e2
+
+e1 \%-|\% e2
 }
 \arguments{
 \item{e1}{first point}
@@ -12,5 +15,7 @@ e1 \%|-\% e2
 \item{e2}{second point}
 }
 \description{
+Find point perpendicular to 2 points
+
 Find point perpendicular to 2 points
 }

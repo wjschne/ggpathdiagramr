@@ -1,0 +1,132 @@
+---
+title: "Lines"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{lines}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 6,
+  fig.height = 6, 
+  dev = "ragg_png"
+)
+library(ggpathdiagramr)
+library(ggplot2)
+library(dplyr)
+```
+
+```{r setup}
+library(ggpathdiagramr)
+library(ggplot2)
+library(dplyr)
+```
+
+Let's make an empty base plot so that illustrations can happen with less code.
+
+```{r bp}
+bp <- ggplot() + 
+  xlim(-3, 3) + 
+  ylim(-3, 3) + 
+  coord_equal()
+```
+
+# Making Lines
+
+Lines can be constructed from a slope and an intercept:
+
+```{r}
+l <- line(slope = 2, intercept = 1)
+
+```
+
+```{r slopeintercept, , fig.cap="A line with slope of 2 and intercept of 1"}
+bp + 
+  l +
+  label(p = anchor(l,0),
+        label = equation(l),
+        vjust = 0, 
+        angle = l@angle@degree, 
+        size = 5)
+```
+
+
+Because the default slope is 0, a horizontal line can be set with just the intercept:
+
+```{r}
+bp + 
+  line(intercept = 2)
+```
+
+A vertical line can be set with the x-intercept:
+
+```{r}
+bp + 
+  line(x_intercept = -1)
+```
+
+Any line---horizontal, vertical, or sloped---can be constructed from the coefficients of the general form of a line:
+
+$$
+ax+by+c=0
+$$
+
+```{r}
+l_123 <- line(a = 1, b = 2, c = 3)
+```
+
+```{r}
+bp +
+  l_123 +
+  label(
+    p = anchor(l_123, 0),
+    label = equation(l_123, type = "general"),
+    angle = l_123@angle@degree,
+    vjust = 0
+  )
+```
+
+With respect to the general form, the slope is equal to $-a/b$, the y-intercept is equal to $-c/b$, and the x-intercept is equal to $-c/a$
+
+# Methods
+
+## Projections and Distances
+
+A point can be "projected" onto a line. Imagine shining a light on the point in a direction perpendicular to the line. The point's shadow on the line would be the shortest distance between the line and the point.
+
+
+```{r}
+p <- point(1,-1, size = 3)
+l <- line(slope = 2, intercept = 2)
+p_projected <- projection(p, l)
+```
+
+
+The shortest distance from a point to a line can be calculated.
+
+```{r}
+dist_p_l <- distance(p, l)
+```
+
+```{r}
+bp +
+  l +
+  p  +
+  p_projected +
+  (s_projected <- segment(p, p_projected, 
+                          linetype = "dashed")) +
+  label(midpoint(s_projected),
+        dist_p_l,
+        angle = s_projected@line@angle@degree,
+        vjust = 0) +
+  label(p, vjust = 1, hjust = 0) +
+  label(p_projected, vjust = 0, hjust = 1) + 
+  label(anchor(l,0), equation(l), angle = l@angle@degree, vjust = 0)
+```
+
+
+

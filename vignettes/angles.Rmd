@@ -1,0 +1,103 @@
+---
+title: "Angles"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Angles}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+library(ggpathdiagramr)
+```
+
+```{r setup}
+library(ggpathdiagramr)
+```
+
+Angles have different kinds of units associated with them: degrees, radians, gradians, and turns.
+
+I like $\pi$ just fine, but I agree with Michael Hartl's [Tau Manifesto](https://tauday.com/tau-manifesto) that we would have been better off if we had recognized that the number of radians to complete a full circle is more fundamental than the number of radians to complete a half circle. The symbol for this value is $\tau = 2\pi\approx 6.283185$
+
+The `angle` class can take turns (i.e., 1 turn = one full rotation a circle), degrees (1 turn = 360 degrees), radians (1 turn = $2\pi$ = $\tau$), or gradians (1 turn = 400 gradians, gons, or grads).
+
+One can create equivalent angles with any of the four metrics.
+
+Turns | Radians | Degrees | Gradians|
+:----:|:-------:|:-------:|:-------:|
+.25 | .25&tau;<br>.5&pi; | 90&deg; | 100grad |
+
+A right angle is
+ * one quarter turn
+ * 1 quarter of $\tau$ radians
+ * one half of $\pi$ radians
+ * 90 degrees
+ * 100 gradians (AKA gons, grad, grades)
+
+```{r}
+tau <- 2 * pi
+right_angle <- angle(turn = .25)
+right_angle == angle(radian = .25 * tau)
+right_angle == angle(radian = .5 * pi)
+right_angle == angle(degree = 90)
+right_angle == angle(gradian = 90)
+```
+
+
+# Arithmetic Operations
+
+Angles can be added, subtracted, multiplied, and divided. The result is never negative and always less than 1 turn (360 degrees or $\tau$ radians).
+
+$$30\unicode{xb0} + 60\unicode{xb0} = 90\unicode{xb0}$$
+
+```{r}
+angle(degree = 30) + angle(degree = 60)
+
+```
+
+$$\begin{align}330\unicode{xb0} + 60\unicode{xb0} &= 390\unicode{xb0}\\&=30\unicode{xb0}\end{align}$$
+
+```{r}
+angle(degree = 330) + angle(degree = 60)
+```
+
+$$\begin{align}10\unicode{xb0} - 20\unicode{xb0} &= -10\unicode{xb0}\\&=350\unicode{xb0}\end{align}$$
+
+```{r}
+angle(degree = 10) - angle(degree = 20)
+```
+
+$$2\cdot20\unicode{xb0}=40\unicode{xb0}$$
+
+
+```{r}
+2 * angle(degree = 20) 
+```
+
+$$\begin{align}2\cdot180 &= 360\unicode{xb0}\\&=0\unicode{xb0}\end{align}$$
+
+```{r}
+2 * angle(degree = 180) 
+```
+
+# Trigonometry
+
+Angles can take the three standard trigonometric functions
+
+```{r}
+theta <- angle(degree = 60)
+cos(theta)
+sin(theta)
+tan(theta)
+```
+
+Benefits of using trigonometric functions with angles instead of numeric radians include:
+
+* Conversions from angles are handled automatically.
+* Under the hood, the `cospi`, `sinpi`, and `tanpi` functions are used to get the rounding right on key locations (e.g., 90 degrees)
+
+

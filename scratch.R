@@ -80,3 +80,7 @@ cc <- point(x = c(2, 3), y = 1)
 dd <- point(x = 1, y = c(2, 2))
 all.equal(aa,bb)
 
+hr <- seq(0,2,.1)
+theta <- hr * pi
+
+cos(theta) == cospi(hr)

@@ -5,12 +5,31 @@
 \title{an ellipse}
 \usage{
 ellipse(
-  center = class_missing,
-  a = class_missing,
-  b = class_missing,
-  theta = class_missing,
-  n = class_missing
+  center = S7::class_missing,
+  a = S7::class_missing,
+  b = S7::class_missing,
+  m1 = S7::class_missing,
+  m2 = S7::class_missing,
+  theta = S7::class_missing,
+  n = S7::class_missing
 )
+}
+\arguments{
+\item{center}{point at center of ellipse}
+
+\item{a}{distance of semi-major axis}
+
+\item{b}{distance of semi-minor axis}
+
+\item{m1}{exponent of semi-major axis}
+
+\item{m2}{exponent of semi-minor axis}
+
+\item{theta}{ellipse rotation}
+
+\item{n}{number of polygon points}
+
+\item{xy}{polygon points}
 }
 \description{
 an ellipse

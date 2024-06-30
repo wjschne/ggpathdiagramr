@@ -1,3 +1,4 @@
 ^pathdiagram\.Rproj$
 ^\.Rproj\.user$
 scratch.R
+^README\.Rmd$

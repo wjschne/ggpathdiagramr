@@ -4,12 +4,21 @@
 \alias{segment}
 \title{segment class}
 \usage{
-segment(p1 = class_missing, p2 = class_missing)
+segment(
+  p1 = S7::class_missing,
+  p2 = S7::class_missing,
+  style = S7::class_missing,
+  ...
+)
 }
 \arguments{
 \item{p1}{point 1}
 
 \item{p2}{point 2}
+
+\item{style}{a style list}
+
+\item{...}{properties passed to style}
 
 \item{line}{line on which the segment lies}
 

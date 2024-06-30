@@ -8,8 +8,27 @@ point(
   x = S7::class_missing,
   y = S7::class_missing,
   angle = S7::class_missing,
-  distance = S7::class_missing
+  distance = S7::class_missing,
+  style = S7::class_missing,
+  ...
 )
+}
+\arguments{
+\item{x}{Coordinate on the x-axis}
+
+\item{y}{Coordinate on the y-axis}
+
+\item{angle}{Angle of the vector from the origin to the point}
+
+\item{distance}{Distance from the origin to the point}
+
+\item{style}{a style list}
+
+\item{...}{properties passed to style}
+
+\item{slope}{Slope of the vector from the origin to the point}
+
+\item{xy}{A 1 by 2 matrix of the x and y coordinates}
 }
 \description{
 point class

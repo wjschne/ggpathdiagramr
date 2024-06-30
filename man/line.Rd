@@ -10,8 +10,25 @@ line(
   x_intercept = S7::class_missing,
   a = S7::class_missing,
   b = S7::class_missing,
-  c = S7::class_missing
+  c = S7::class_missing,
+  style = S7::class_missing,
+  ...
 )
+}
+\arguments{
+\item{slope}{coefficient in y = slope * x + intercept}
+
+\item{intercept}{value of y when x is 0}
+
+\item{x_intercept}{value of x when y is 0}
+
+\item{a}{constant in general form: a * x + b * y + c = 0}
+
+\item{b}{coefficient in general form: a * x + b * y + c = 0}
+
+\item{style}{a style list}
+
+\item{...}{properties passed to style}
 }
 \description{
 line class
