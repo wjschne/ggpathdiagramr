@@ -11,7 +11,9 @@ rectangle(
   northeast = S7::class_missing,
   northwest = S7::class_missing,
   southwest = S7::class_missing,
-  southeast = S7::class_missing
+  southeast = S7::class_missing,
+  style = S7::class_missing,
+  ...
 )
 }
 \arguments{
@@ -21,7 +23,11 @@ rectangle(
 
 \item{height}{height}
 
+\item{style}{a style object}
+
 \item{xy}{2-column matrix of points}
+
+\item{<[`dynamic-dots`][rlang::dyn-dots]>}{arguments passed to style object if style is empty}
 }
 \description{
 rectangle class

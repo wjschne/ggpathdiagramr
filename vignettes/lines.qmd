@@ -2,8 +2,8 @@
 title: "Lines"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{lines}
-  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteIndexEntry{Lines}
+  %\VignetteEngine{quarto::html}
   %\VignetteEncoding{UTF-8}
 ---
 
@@ -102,7 +102,12 @@ A point can be "projected" onto a line. Imagine shining a light on the point in 
 ```{r}
 p <- point(1,-1, size = 3)
 l <- line(slope = 2, intercept = 2)
+# Point p projected onto line l
 p_projected <- projection(p, l)
+# segment from p to p_projected
+s_projected <- segment(p, p_projected, 
+                          linetype = "dashed")
+
 ```
 
 
@@ -115,17 +120,16 @@ dist_p_l <- distance(p, l)
 ```{r}
 bp +
   l +
+  label(anchor(l,0), equation(l), angle = l@angle@degree, vjust = 0) +
   p  +
-  p_projected +
-  (s_projected <- segment(p, p_projected, 
-                          linetype = "dashed")) +
-  label(midpoint(s_projected),
-        dist_p_l,
-        angle = s_projected@line@angle@degree,
-        vjust = 0) +
   label(p, vjust = 1, hjust = 0) +
+  p_projected +
   label(p_projected, vjust = 0, hjust = 1) + 
-  label(anchor(l,0), equation(l), angle = l@angle@degree, vjust = 0)
+  s_projected +
+  label(p = midpoint(s_projected),
+        label = dist_p_l,
+        angle = s_projected@line@angle@degree,
+        vjust = 0) 
 ```
 
 

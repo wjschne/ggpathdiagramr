@@ -1,4 +1,6 @@
 
+
+
 # distance----
 #' Calculate distance between 2 points
 #'
@@ -7,7 +9,6 @@
 #' @param center logical. if the distance between 2 circles should be calculated from their centers or their edges
 #' @rdname distance
 #' @return numeric
-#' @export
 #' @examples
 #' # Distance between two objects
 #' p1 <- point(0, 0)
@@ -29,6 +30,7 @@
 #'
 #' # Distance between the centers of 2 circles
 #' distance(c1, c2, center = TRUE)
+#' @export
 distance <- S7::new_generic("distance", c("x", "y"))
 S7::method(distance, list(point, point)) <- function(x,y) {
   d <- (y - x)
@@ -48,7 +50,7 @@ S7::method(distance, list(segment, S7::class_missing)) <- function(x,y) {
 }
 S7::method(distance, list(circle, circle)) <- function(x,y, center = FALSE) {
   d <- (y@center - x@center)
-  if (!center && !identical(x,y)) {
+  if (!center) {
     if (x@radius + y@radius > distance(d)) {
       d <- point(0,0)
     } else {
@@ -144,6 +146,11 @@ S7::method(midpoint, list(segment, S7::class_missing)) <- function(x,y, position
   midpoint(x@p1, x@p2, position = position)
 }
 
+S7::method(midpoint, list(arc, S7::class_missing)) <- function(x,y, position = .5) {
+  theta <- x@start + x@theta * position
+  point(angle = theta, distance = x@radius, style = x@style)
+}
+
 # anchor----
 #' @export
 anchor <- S7::new_generic("anchor", dispatch_args = c("x", "position"))
@@ -151,14 +158,13 @@ anchor <- S7::new_generic("anchor", dispatch_args = c("x", "position"))
 ## anchor circle----
 S7::method(anchor, list(circle, angle)) <- function(x, position) {
 
-  point(x = cos(position) * x@radius + x@center@x,
-        y = sin(position) * x@radius + x@center@y)
+  point(x = cos(position), y = sin(position)) * x@radius + x@center
 
 }
 
 S7::method(anchor, list(circle, S7::class_numeric)) <- function(x, position) {
 
-  position <- angle(radian = position)
+  position <- angle(degree = position)
 
   anchor(x,position)
 
@@ -692,39 +698,66 @@ point(xp, yp, style = x@style)
 #   }
 
 
-# Make label ----
-make_label <- S7::new_generic("make_label", c("x", "y"))
-S7::method(make_label, list(point, S7::class_character)) <- function(x,y) {
-  label(x = x@x, y = x@y, label = y)
+
+
+
+# str ----
+#' structure
+#'
+#' @param object object
+#' @keywords internal
+str <- S7::new_generic("str", "object")
+S7::method(str, point) <- function(object, ..., nest.lev = 0, additional = TRUE) {
+  prepend_spaces <- paste0(rep("  ", nest.lev), collapse = "")
+  cat(if (nest.lev > 0) " ")
+  cat(S7:::obj_desc(object))
+
+
+
+  additional_text <- ""
+  if (additional) additional_text <- "\n Additional properties: slope, angle, distance, xy, style\n"
+
+  cat(paste0("\n", prepend_spaces," @ x : num ", round(object@x,2),
+             "\n", prepend_spaces," @ y : num ", round(object@y,2),
+             additional_text))
+}
+S7::method(str, label) <- function(object, ..., nest.lev = 0) {
+  cat(if (nest.lev > 0) " ")
+  cat(S7:::obj_desc(object))
+  cat(paste0("\n @ p     :"))
+  str(object@p)
+
+
+  cat(paste0("\n @ label : chr ", object@label,
+             "\n Additional properties: xy, style\n"))
+
+
 }
 
+S7::method(str, rectangle) <- function(object, ..., nest.lev = 0) {
+  cat(if (nest.lev > 0) " ")
+  cat(S7:::obj_desc(object))
+  cat(paste0("\n @ center     :"))
+  str(object@center, nest.lev = 1, additional = FALSE)
 
-#
-# library(grid)
-# Plot ----
-# S7::method(plot, circle) <- function(x) {
-#   mycircle <- circleGrob(x = x@center@x, y = x@center@y, r = x@radius, gp = gpar(col = "gray", lty = 1, fill = "black") )
-#   mycircle
-# }
-# plot(segment(point(1,2), point(4,5)))
-# plot(circle(point(4,5), radius = 2))
-# grid.draw(plot(circle(point(.5,.5), radius = .1)))
 
-# S7::method(plot, xy) <- function(x, ...) {
-#   if ("point" %in% class(x)) {
-#     points(x@xy, pch = 16, ...)
-#   } else {
-#     polygon(x@xy, ...)
-#   }
-# }
-#
-# S7::method(plot, point) <- function(x, pch = 16, ...) {
-#     points(x@xy, pch = pch, ...)
-# }
-#
-# S7::method(plot, point_list) <- function(x, pch = 16, ...) {
-#     points(x@xy, pch = pch, ...)
-# }
+  cat(paste0("\n @ width  : chr ", round(object@width, 2),
+             "\n @ height : chr ", round(object@height, 2),
+             "\n Additional properties: northeast, northwest, southwest, southeast, xy, style\n"))
+
+
+}
+
+S7::method(print, rectangle) <- function(x, ...) {
+  str(x, ...)
+  invisible(x)
+}
+
+S7::method(print, point) <- function(x, ...) {
+  str(x, ...)
+  invisible(x)
+
+}
 
 
 
@@ -737,44 +770,43 @@ S7::method(make_label, list(point, S7::class_character)) <- function(x,y) {
 #' @export
 as.geom <- S7::new_generic("as.geom", c("x"))
 S7::method(as.geom, point_or_point_list) <- function(x, ...) {
-   out <- striplist(c(rlang::list2(...),
-            S7::convert(x@style, to = S7::class_list)),
-            c("color", "pch", "size", "shape", "stroke","alpha"))
-  rlang::inject(ggplot2::geom_point(data = as.data.frame(x@xy),
-                                    ggplot2::aes(x = x, y = y),
-                                    !!!out))
+
+  the_style <- geom_styles(x = style(shape = 16) + x@style, styles = the$point, ...)
+
+  rlang::inject(
+    ggplot2::geom_point(data = as.data.frame(x@xy),
+                        ggplot2::aes(x = x, y = y),
+    !!!the_style))
 }
 
 S7::method(as.geom, line) <- function(x, ...) {
-  out <- striplist(c(rlang::list2(...),
-                     S7::convert(x@style, to = S7::class_list)),
-           c("color", "linewidth", "linetype", "alpha"))
+
+  the_style <- geom_styles(x = x@style, styles = the$line, ...)
+
   if (x@b == 0) {
-    g <- rlang::inject(ggplot2::geom_vline(xintercept = x@x_intercept, !!!out))
+    g <- rlang::inject(ggplot2::geom_vline(xintercept = x@x_intercept, !!!the_style))
   } else if (x@a == 0) {
-    g <- rlang::inject(ggplot2::geom_hline(yintercept = x@intercept, !!!out))
+    g <- rlang::inject(ggplot2::geom_hline(yintercept = x@intercept, !!!the_style))
   } else {
-    g <- rlang::inject(ggplot2::geom_abline(slope = x@slope, intercept = x@intercept, !!!out))
+    g <- rlang::inject(ggplot2::geom_abline(slope = x@slope, intercept = x@intercept, !!!the_style))
   }
   g
 }
 S7::method(as.geom, segment) <- function(x, ...) {
-  out <- striplist(c(rlang::list2(...),
-                     S7::convert(x@style, to = S7::class_list)),
-                   c("color", "linewidth", "linetype", "alpha"))
-  rlang::inject(ggplot2::geom_line(data = as.data.frame(x@xy), aes(x = x, y = y), !!!out))
+  the_style <- geom_styles(x = x@style, styles = the$line, ...)
+  rlang::inject(ggplot2::geom_line(data = as.data.frame(x@xy), aes(x = x, y = y), !!!the_style))
 }
 
 S7::method(as.geom, segment_list) <- function(x, ...) {
-  out <- striplist(c(rlang::list2(...),
-                     S7::convert(x@style, to = S7::class_list)),
-                   c("color", "linewidth", "linetype", "alpha"))
+  the_style <- geom_styles(x = x@style, styles = the$line, ...)
+
+
   d_p1 <- as.data.frame(x@p1@xy)
   colnames(d_p1) <- c("p1_x", "p1_y")
   d_p2 <- as.data.frame(x@p2@xy)
   colnames(d_p1) <- c("p2_x", "p2_y")
   d <- cbind(d_p1, d_p2)
-  rlang::inject(ggplot2::geom_segment(data = d, aes(x = p1_x, y = p1_y, xend = p2_x, yend = p2_y), !!!out))
+  rlang::inject(ggplot2::geom_segment(data = d, aes(x = p1_x, y = p1_y, xend = p2_x, yend = p2_y), !!!the_style))
 }
 
 S7::method(as.geom, circle) <- function(x, ...) {
@@ -786,9 +818,19 @@ S7::method(as.geom, ellipse) <- function(x, ...) {
 }
 
 S7::method(as.geom, rectangle) <- function(x, ...) {
+
+  the_style <- geom_styles(x = x@style, styles = the$point, ...)
+
   d <- data.frame(x = x@center@x, y = x@center@y, width = x@width, height = x@height)
 
-  ggplot2::geom_tile(data = s, aes(x = x, y = y, width = width, height = height), ...)
+  rlang::inject(ggplot2::geom_tile(data = d, aes(x = x, y = y, width = width, height = height)), !!!the_style)
+}
+
+S7::method(as.geom, arc) <- function(x, ...) {
+
+  the_style <- geom_styles(x = x@style, styles = the$line, ...)
+
+  rlang::inject(ggplot2::geom_line(data = as.data.frame(x@xy), aes(x = x, y = y), !!!the_style))
 }
 
 S7::method(as.geom, label) <- function(
@@ -807,9 +849,9 @@ S7::method(as.geom, label) <- function(
                                    unit = "pt"),
     label.color = NA,
     fill = NA) {
-  out <- striplist(c(rlang::list2(...),
-                     S7::convert(x@style, to = S7::class_list)),
-                   c("color", "family", "fontface", "alpha", "size", "fill", "angle", "vjust", "hjust"))
+
+  the_style <- geom_styles(x = x@style, styles = the$text, ...)
+
   geom <- match.arg(geom)
 
   if (geom == "text") {
@@ -817,7 +859,11 @@ S7::method(as.geom, label) <- function(
   } else if (geom == "label") {
     geom2text <- ggplot2::geom_label
   } else if (geom == "richtext") {
-    geom2text <- purrr::partial(ggtext::geom_richtext, label.margin = label.margin, fill = fill, label.color = NA)
+    geom2text <- purrr::partial(
+      ggtext::geom_richtext,
+      label.margin = label.margin,
+      fill = fill,
+      label.color = NA)
   } else if (geom == "richtext") {
     geom2text <- marquee::geom_marquee
   }
@@ -839,6 +885,17 @@ S7::method(as.matrix, point_list) <- function(x) {
   do.call(rbind, lapply(x, function(p) p@xy))
 }
 S7::method(as.data.frame, point_list) <- function(x) {
+  as.data.frame(as.matrix(x))
+}
+
+
+
+
+# as.data.frame ----
+
+S7::method(as.data.frame, point) <- function(x) {
+
+
   as.data.frame(as.matrix(x))
 }
 
@@ -878,7 +935,7 @@ S7::method(resect,
                 S7::class_numeric)) <- function(x,resect, resect_end = resect) {
   d <- x@p2 - x@p1
   x@p1 <- x@p1 + point(angle = d@angle, distance = resect)
-  x@p2 <- x@p2 + point(angle = d@angle + angle(.5), distance = resect_end)
+  x@p2 <- x@p2 + point(angle = d@angle + angle(turn = .5), distance = resect_end)
   x
   }
 S7::method(
@@ -936,4 +993,32 @@ S7::method(convert, list(style, S7::class_list)) <- function(from, to) {
     }
   }
   l
+}
+
+# radidal_just ----
+#' Create a style object with hjust and vjust specified via radial coordinates
+#'
+#' @param angle numberic (radians), angle, or point (which contains angle and distance (multiplier))
+#' @param multiplier make hjust and vjust larger
+#' @export
+radial_just <- new_generic("radial_just", c("angle", "multiplier"))
+S7::method(radial_just, list(S7::class_numeric, S7::class_numeric)) <- function(angle, multiplier) {
+  hjust <- (((cos(angle + pi) + 1)/2) - 0.5) * multiplier + 0.5
+  vjust <- (((sin(angle + pi) + 1)/2) - 0.5) * multiplier + 0.5
+  style(hjust = hjust, vjust = vjust)
+}
+S7::method(radial_just, list(S7::class_numeric, S7::class_missing)) <- function(angle, multiplier) {
+  radial_just(angle, 1)
+}
+
+S7::method(radial_just, list(angle, S7::class_missing)) <- function(angle, multiplier) {
+  radial_just(angle@radian, 1)
+}
+
+S7::method(radial_just, list(angle, S7::class_numeric)) <- function(angle, multiplier) {
+  radial_just(angle@radian, multiplier)
+}
+
+S7::method(radial_just, list(point, S7::class_missing)) <- function(angle, multiplier) {
+  radial_just(angle@angle@radian, angle@distance)
 }

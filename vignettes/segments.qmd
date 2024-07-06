@@ -1,9 +1,11 @@
 ---
 title: "Segments"
-output: rmarkdown::html_vignette
+format: 
+  html:
+    toc: true
 vignette: >
   %\VignetteIndexEntry{segments}
-  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEngine{quarto::html}
   %\VignetteEncoding{UTF-8}
 ---
 
@@ -42,14 +44,45 @@ s1 <- segment(p1, p2)
 
 ```{r}
 bp +
-  as.geom(s1)
+  s1
 ```
 
+Styles can be specified when the segment is created.
+
+```{r}
+s2 <- segment(p1,p2, color = "red")
+bp + s2
+```
+
+Styles can be modified via the `@style` property:
+
+```{r}
+s2@style@linewidth <- 2
+bp +
+  s2
+```
+
+The `as.geom` passes style arguments to the `geom_seqment` function without modifying the segment's style property:
+
+```{r}
+# Make s1 appear red temporarily
+bp +
+  as.geom(s1, color = "red")
+# Verify that s1's style is not red
+bp +
+  s1
+```
 
 The line that passes between both points:
 
 ```{r}
-s1@line
+bp +
+  s1@line+
+  s1@p1 + 
+  s2@p2 + 
+  label(s2@p1, vjust = 1, hjust = 0) + 
+  label(s2@p2, vjust = 1, hjust = 0)
+
 ```
 
 The distance between a segment's points:
@@ -60,11 +93,13 @@ distance(s1)
 
 ```{r}
 bp + 
-  as.geom(resect(s1, .2), arrow = arrow(ends = "both", type = "closed", angle = 20)) + 
+  as.geom(resect(s1, .15)) + 
   label(midpoint(s1), 
         label = distance(s1), 
         angle = s1@line@angle@degree, 
-        vjust = 0)
+        vjust = 0) +
+  s1@p1 +
+  s1@p2
 ```
 
 

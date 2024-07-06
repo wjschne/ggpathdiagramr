@@ -30,6 +30,10 @@ ellipse(
 \item{n}{number of polygon points}
 
 \item{xy}{polygon points}
+
+\item{style}{a style object}
+
+\item{<[`dynamic-dots`][rlang::dyn-dots]>}{arguments passed to style object if style is empty}
 }
 \description{
 an ellipse

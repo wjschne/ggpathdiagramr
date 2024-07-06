@@ -55,11 +55,14 @@ rounder <- function(x, digits = 2, add = FALSE) {
   trimws(gsub(x = r, pattern = "\\s+", replacement = " "))
 }
 
-#' @keywords internal
-striplist <- function(l, v) {
-  lnames <- names(l)
-  lnames <- lnames[lnames %in% v]
-  l[lnames]
-}
 
-point_styles <- c("alpha", "color", "fill", "pch", "shape", "size", "stroke")
+
+
+
+
+#' @keywords internal
+geom_styles <- function(x, styles, ...) {
+  p_style <- x + style(...)
+  Filter(function(s) length(s) > 0 ,S7::props(p_style)[styles])
+
+}

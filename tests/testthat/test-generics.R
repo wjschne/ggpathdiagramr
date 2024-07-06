@@ -18,7 +18,7 @@ test_that("constructor", {
   expect_identical(bb@xy, cbind(x = c(2, 2, 3),
                                 y = c(4, 1, 3)))
   expect_identical(bb@slope, c(2, 0.5, 1))
-  expect_identical(bb@angle, angle(turn = atan(c(2, 0.5, 1)) / (2 * pi)))
+  expect_true(all(abs(bb@angle@radian - atan(c(2, 0.5, 1)) ) < .Machine$double.eps))
   expect_identical(bb@distance, c(sqrt(20), sqrt(5), sqrt(18)))
   expect_identical(aa, point(cbind(aa@x, aa@y)))
 
@@ -36,10 +36,10 @@ test_that("constructor", {
 
   # Angle
   t <- angle(1)
-  expect_equal(angle(1)@degree, 0)
-  expect_equal(angle(2)@degree, 0)
-  expect_equal(angle(.5)@degree, 180)
-  expect_equal(angle(.5)@radian, pi)
+  expect_equal(angle(turn = 1)@degree, 0)
+  expect_equal(angle(turn = 2)@degree, 0)
+  expect_equal(angle(turn = .5)@degree, 180)
+  expect_equal(angle(turn = .5)@radian, pi)
   expect_equal(angle(radian = pi)@radian, pi)
   expect_equal(angle(degree = 180)@radian, pi)
   # Rectangle
@@ -190,10 +190,11 @@ test_that("intersection", {
                c(p1, p2))
   expect_equal(intersection(line(x_intercept = 2), c1),
                point(2,1))
-  l1 <- line(slope = 1, intercept = 2 * sin(pi / 4))
+  l1 <- line(slope = 1, intercept = 2 * sin(angle(degree = 45)))
   c1 <- circle(point(0,0), radius = 1)
+  # intersect at tangent
   expect_equal(intersection(l1, c1),
-               point(angle = pi * 3 / 4, distance = 1))
+               point(angle = angle(radian = pi * 3 / 4 ), distance = 1))
   l1 <- line(slope = .5, intercept = 0)
   c1 <- circle(point(0,0), radius = 1)
   expect_equal(intersection(l1, c1),
@@ -226,51 +227,51 @@ test_that("dotproduct", {
 
 
 test_that("trig", {
-  expect_equal(cos(angle(1)), cospi(2))
-  expect_equal(sin(angle(.25)), sinpi(.5))
-  expect_equal(tan(angle(.5)), tanpi(1))
+  expect_equal(cos(angle(turn = 1)), cospi(2))
+  expect_equal(sin(angle(turn = .25)), sinpi(.5))
+  expect_equal(tan(angle(turn = .5)), tanpi(1))
 })
 
 test_that("rotate", {
   # rotate a line with an angle
   expect_identical(
-    rotate(line(x_intercept = 2), angle(.5)),
+    rotate(line(x_intercept = 2), angle(turn = .5)),
     line(x_intercept = -2)
   )
   # rotate a line with a numeric radian
   expect_identical(
-    rotate(line(x_intercept = 2), angle(.5)),
+    rotate(line(x_intercept = 2), angle(turn = .5)),
     rotate(line(x_intercept = 2), pi)
   )
 
   # rotate a point
   expect_identical(
-    rotate(point(1,0), angle(.5)),
+    rotate(point(1,0), angle(turn = .5)),
     point(-1,0)
   )
 
   # rotate a segment
   expect_identical(
-    rotate(segment(point(0,1), point(1,0)), theta = angle(.5)),
+    rotate(segment(point(0,1), point(1,0)), theta = angle(turn = .5)),
     segment(point(0,-1), point(-1,0))
   )
 
   # rotate a circle
   expect_identical(
     rotate(x = circle(point(1, 2)),
-           theta = angle(.25)),
+           theta = angle(turn = .25)),
     circle(point(-2, 1)))
 
   expect_identical(
     rotate(x = circle(point(1, 2), n = 50),
-           theta = angle(.25)),
+           theta = angle(turn = .25)),
     circle(point(-2, 1), n = 50))
 
   # rotate an ellipse
   expect_identical(
     rotate(x = ellipse(center = point(1, 2), a = 2, b = 1),
-           theta = angle(.25)),
-    ellipse(point(-2, 1), a = 2, b = 1, theta = angle(.25)))
+           theta = angle(turn = .25)),
+    ellipse(point(-2, 1), a = 2, b = 1, theta = angle(turn = .25)))
 })
 
 test_that("resect", {
@@ -315,4 +316,6 @@ test_that("inside", {
   # expect_equal(inside(point_list(c(o,p1,rp1, anchor(e1, angle(0)))), e1), c(1, 1, -1, 0))
 
 })
+
+arc()
 
