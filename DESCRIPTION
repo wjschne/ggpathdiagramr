@@ -1,14 +1,15 @@
 Package: ggpathdiagramr
 Title: Makes path diagrams
 Version: 0.0.0.9000
-Authors@R: c(
+Authors@R: 
     person("W. Joel", "Schneider", , "w.joel.schneider@gmail.com", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0002-8393-5316"))
-  )
 Description: Makes path diagrams for path analysis and structural equation
     models.
 License: CC0
-Language: en-GB
+URL: https://github.com/wjschne/ggpathdiagramr,
+    https://wjschne.github.io/ggpathdiagramr/
+BugReports: https://github.com/wjschne/ggpathdiagramr/issues
 Imports: 
     arrowheadr,
     ggarrow,
@@ -22,13 +23,16 @@ Imports:
     tibble
 Suggests: 
     knitr,
-    rmarkdown,
     quarto,
+    rmarkdown,
     testthat (>= 3.0.0)
+VignetteBuilder: 
+    quarto
 Remotes: 
     https://github.com/rconsortium/OOP-WG
 Config/testthat/edition: 3
 Encoding: UTF-8
+Language: en-GB
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
 Collate: 
@@ -44,6 +48,3 @@ Collate:
     'helpers.R'
     'shapes.R'
     'generics.R'
-VignetteBuilder: quarto
-URL: https://github.com/wjschne/ggpathdiagramr, https://wjschne.github.io/ggpathdiagramr/
-BugReports: https://github.com/wjschne/ggpathdiagramr/issues
