@@ -9,30 +9,17 @@ Description: Makes path diagrams for path analysis and structural equation
     models.
 License: MIT + file LICENSE
 Imports: 
-    arrowheadr,
-    ggarrow,
     S7 (>= 0.0.0.9000)
 Suggests: 
-    knitr,
-    rmarkdown,
     testthat (>= 3.0.0)
 Remotes: 
     https://github.com/rconsortium/OOP-WG
 Config/testthat/edition: 3
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.2
+RoxygenNote: 7.3.1
 Collate: 
     'zzz.R'
-    'early_defs.R'
-    'angles.R'
-    'styles.R'
-    'points.R'
-    'labels.R'
-    'lines.R'
     'helpers.R'
     'shapes.R'
     'generics.R'
-VignetteBuilder: knitr
-URL: https://github.com/wjschne/ggpathdiagramr, https://wjschne.github.io/ggpathdiagramr/
-BugReports: https://github.com/wjschne/ggpathdiagramr/issues

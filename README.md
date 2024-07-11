@@ -1,5 +1,4 @@
 
-
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
 # ggpathdiagramr
@@ -7,13 +6,13 @@
 <!-- badges: start -->
 
 [![CRAN
-status](https://www.r-pkg.org/badges/version/ggpathdiagramr.png)](https://CRAN.R-project.org/package=ggpathdiagramr)
+status](https://www.r-pkg.org/badges/version/ggpathdiagramr)](https://CRAN.R-project.org/package=ggpathdiagramr)
 <!-- badges: end -->
 
-This package is in a very preliminary state. It has some structural
-beams and a bit of plumbing but is not yet capable of fulfilling its
-eventual purpose: To construct path diagrams in R via ggplot2, but with
-a TiKz-like workflow.
+This package is in a very preliminary state. It has some preliminary
+plumbing but does not yet have its primary functions. Its future
+function will be to construct path diagrams in R via ggplot2, but with a
+TiKz-like workflow.
 
 ## Installation
 
@@ -22,3 +21,44 @@ You can install the development version of ggpathdiagramr like so:
 ``` r
 remotes::install_github("wjschne/ggpathdiagramr")
 ```
+
+## Example
+
+This is a basic example which shows you how to solve a common problem:
+
+``` r
+library(ggpathdiagramr)
+#> 
+#> Attaching package: 'ggpathdiagramr'
+#> The following object is masked from 'package:stats':
+#> 
+#>     line
+```
+
+``` r
+## basic example code
+```
+
+What is special about using `README.Rmd` instead of just `README.md`?
+You can include R chunks like so:
+
+``` r
+summary(cars)
+#>      speed           dist       
+#>  Min.   : 4.0   Min.   :  2.00  
+#>  1st Qu.:12.0   1st Qu.: 26.00  
+#>  Median :15.0   Median : 36.00  
+#>  Mean   :15.4   Mean   : 42.98  
+#>  3rd Qu.:19.0   3rd Qu.: 56.00  
+#>  Max.   :25.0   Max.   :120.00
+```
+
+You’ll still need to render `README.Rmd` regularly, to keep `README.md`
+up-to-date. `devtools::build_readme()` is handy for this.
+
+You can also embed plots, for example:
+
+<img src="man/figures/README-pressure-1.png" width="100%" />
+
+In that case, don’t forget to commit and push the resulting figure
+files, so they display on GitHub and CRAN.

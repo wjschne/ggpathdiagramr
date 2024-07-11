@@ -4,12 +4,7 @@
 \alias{circle}
 \title{circle class}
 \usage{
-circle(
-  center = class_missing,
-  radius = class_missing,
-  n = class_missing,
-  style = class_missing
-)
+circle(center = class_missing, radius = class_missing, n = class_missing)
 }
 \arguments{
 \item{center}{point at center of the circle}
@@ -18,11 +13,7 @@ circle(
 
 \item{n}{number of points in circle}
 
-\item{style}{a style object}
-
 \item{xy}{2-column matrix of points}
-
-\item{<[`dynamic-dots`][rlang::dyn-dots]>}{arguments passed to style object if style is empty}
 }
 \description{
 circle class
