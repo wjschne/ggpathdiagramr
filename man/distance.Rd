@@ -7,9 +7,9 @@
 distance(x, y, ...)
 }
 \arguments{
-\item{x}{a point or segment}
+\item{x}{a point, line, segment, or circle}
 
-\item{y}{a point or NULL}
+\item{y}{a point, line, or circle}
 
 \item{center}{logical. if the distance between 2 circles should be calculated from their centers or their edges}
 }

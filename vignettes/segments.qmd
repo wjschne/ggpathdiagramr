@@ -1,0 +1,109 @@
+---
+title: "Segments"
+knitr:
+  opts_chunk: 
+    collapse: true
+    comment: '#>'
+format: 
+  html:
+    toc: true
+vignette: >
+  %\VignetteIndexEntry{segments}
+  %\VignetteEngine{quarto::html}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+library(ggpathdiagramr)
+library(ggplot2)
+```
+
+```{r setup}
+library(ggpathdiagramr)
+library(ggplot2)
+```
+
+For ease of plotting, we will define a base plot:
+
+```{r}
+bp <- ggplot() +
+  coord_equal() +
+  xlim(-4,4) +
+  ylim(-4,4)
+```
+
+
+A segment is a portion of a line between two points.
+
+
+```{r}
+p1 <- point(0,1)
+p2 <- point(3,3)
+s1 <- segment(p1, p2, style = style(resect = 3))
+```
+
+```{r}
+bp +
+  s1
+```
+
+Styles can be specified when the segment is created.
+
+```{r}
+s2 <- segment(p1,p2, color = "red")
+bp + s2
+```
+
+Styles can be modified via the `@style` property:
+
+```{r}
+s2@style@linewidth <- 2
+bp +
+  s2
+```
+
+The `as.geom` passes style arguments to the `geom_seqment` function without modifying the segment's style property:
+
+```{r}
+# Make s1 appear red temporarily
+bp +
+  as.geom(s1, color = "red")
+# Verify that s1's style is not red
+bp +
+  s1
+```
+
+The line that passes between both points:
+
+```{r}
+bp +
+  s1@line+
+  s1@p1 + 
+  s2@p2 + 
+  label(s2@p1, vjust = 1, hjust = 0) + 
+  label(s2@p2, vjust = 1, hjust = 0)
+
+```
+
+The distance between a segment's points:
+
+```{r}
+distance(s1)
+```
+
+```{r}
+bp + 
+  s1 + 
+  label(midpoint(s1), 
+        label = distance(s1), 
+        angle = s1@line@angle@degree, 
+        vjust = 0) +
+  s1@p1 +
+  s1@p2
+```
+
+

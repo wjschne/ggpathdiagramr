@@ -1,0 +1,275 @@
+---
+title: "Angles"
+knitr:
+  opts_chunk: 
+    collapse: true
+    comment: '#>'
+format: 
+  html:
+    toc: true
+vignette: >
+  %\VignetteIndexEntry{angles}
+  %\VignetteEngine{quarto::html}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r presetup, include = FALSE}
+library(ggpathdiagramr)
+library(ggplot2)
+library(dplyr)
+knitr::opts_chunk$set(dev = "svg")
+```
+
+```{r setup}
+library(ggpathdiagramr)
+library(ggplot2)
+library(dplyr)
+```
+
+Angles have different kinds of units associated with them: degrees, radians, gradians, and turns. The `angle` class can take turns (i.e., 1 turn = one full rotation a circle), degrees (1 turn = 360 degrees), radians (1 turn = $2\pi$ = $\tau$), or gradians (1 turn = 400 gradians, gons, or grads).
+
+I like &pi; just fine, but I agree with Michael Hartl's [Tau Manifesto](https://tauday.com/tau-manifesto) that we would have been better off if we had recognized that the number of radians to complete a full turn of a circle (&tau; = 2&pi; &asymp; 6.283185) is more fundamental than the number of radians to complete a half turn (&pi;). 
+
+Turns | Radians | Degrees | Gradians|
+:----:|:-------:|:-------:|:-------:|
+$\frac{1}{12}$ | $\frac{\tau}{12}~\text{or}~\frac{\pi}{6}$ | $30^\circ$  | $33.\bar{3}$ |
+$\frac{1}{8}$ | $\frac{\tau}{8}~\text{or}~\frac{\pi}{4}$ | $45^\circ$  | $50$ |
+$\frac{1}{6}$ | $\frac{\tau}{6}~\text{or}~\frac{\pi}{3}$ | $60^\circ$ | $66.\bar{6}$ |
+$\frac{1}{4}$ | $\frac{\tau}{4}~\text{or}~\frac{\pi}{2}$ | $90^\circ$ | $100$ |
+$\frac{1}{3}$ | $\frac{\tau}{3}~\text{or}~\frac{2\pi}{3}$ | $120^\circ$ | $133.\bar{3}$ |
+$\frac{1}{2}$ | $\frac{\tau}{2}~\text{or}~\pi$ | $180^\circ$ | $200$ |
+$\frac{2}{3}$ | $\frac{2\tau}{3}~\text{or}~\frac{4\pi}{3}$ | $240^\circ$ | $266.\bar{6}$ |
+$1$ | $\tau~\text{or}~2\pi$ | $360^\circ$ | $400$ |
+
+
+
+One can create equivalent angles with any of the four metrics.
+
+```{r right}
+right_angle <- angle(degree = 90)
+right_angle == angle(turn = 1 / 4) 
+right_angle == angle(radian = pi / 2)
+right_angle == angle(gradian = 100)
+```
+
+For the sake of convenience, one can create angles in each of these metrics directly:
+
+```{r convenient_wrappers}
+right_angle == degree(90)
+right_angle == turn(1 / 4)
+right_angle == radian(pi / 2)
+right_angle == gradian(100)
+```
+
+# Characters
+
+For labeling, it is convenient to convert angles to text:
+
+```{r}
+a30 <- degree(30)
+as.character(a30)
+```
+
+# Arithmetic Operations
+
+Angles can be added, subtracted, multiplied, and divided. The result in turns can be any value, but degrees, radians, and gradians are always between -1 and +1 turns (&pm;360 degrees or &pm;&tau; radians, or &pm;400 gradians).
+
+$$30\unicode{xb0} + 60\unicode{xb0} = 90\unicode{xb0}$$
+
+
+
+
+```{r fig-3060}
+#| code-fold: true
+#| fig-cap: "30&deg; + 60&deg; = 90&deg;"
+
+make_angles <- function(a = c(100, 330), r = c(.15, .15), label_adjust = c(0,0)) {
+  style_A <- style(color = "firebrick", 
+                   arrow_head = arrowheadr::arrow_head_deltoid(), 
+                   linewidth = .65,
+                   resect_head = .5)
+  style_B <- style_A + style(color = "royalblue")
+v1 <- degree(a[1])
+v2 <- degree(a[2])
+v12 <- degree(sum(a))
+
+arc_A <- arc(radius = r[1], 
+             start = degree(0), 
+             end = v1, 
+             style = style_A)
+arc_B <- arc(radius = r[2], 
+             start = v1, 
+             end = v12, 
+             style = style_B)
+
+arc_A_mid <- midpoint(arc_A)
+arc_B_mid <- midpoint(arc_B)
+# polar(theta = v, r = 1, style = style_list(c(style_A, style_A, style_B)))@style
+# style_point() + style_list(c(style_A, style_A, style_B))
+ggplot() +
+  theme_void() +
+  coord_equal()  +
+  arc_A +
+  arc_B +
+  arrow_segment(p1 = point(), p2 = polar(theta = degree(c(0,a[1],sum(a))), r = 1), style = style_list(c(style_A, style_A, style_B))) +
+  label(
+    arc_A_mid,
+    style = radial_just(style = style_A,
+                        angle = arc_A_mid@theta + degree(180 + label_adjust[1])),
+    label = as.character(v1),
+  ) +
+  label(
+    arc_B_mid,
+    style = radial_just(style = style_B,
+                        arc_B_mid@theta + degree(180 + label_adjust[2])),
+    label = as.character(v2),
+  )
+}
+
+make_angles(c(30, 60)) +
+  rectangle(southwest = point(0,0), northeast = point(.05, .05)) 
+
+
+```
+
+
+```{r add}
+degree(30) + degree(60) == degree(90) 
+```
+
+
+$$
+\begin{align}
+330\unicode{xb0} + 100\unicode{xb0} &= 430\unicode{xb0}\\
+&= 430\unicode{xb0}-360\unicode{xb0}\\
+&=70\unicode{xb0}\end{align}
+$$
+
+
+```{r fig-100330}
+#| code-fold: true
+#| fig-cap: "100&deg; + 330&deg; = 70&deg;"
+a <- c(80, 300)
+theta1 <- a[2] - a[1]
+
+sum_a <- degree(sum(a))
+
+arc_diff <- arc(
+    start = degree(0),
+    end = degree(degree(sum(a))@degree),
+    linewidth = .6,
+    radius = .36,
+    resect_head = .75,
+    arrow_head = arrowheadr::arrow_head_deltoid()
+  )
+
+arc_diff_label <- midpoint(arc_diff) %>% 
+  label(sum_a + " = " + degree(a[1]) + " + " + degree(a[2]),
+        style = radial_just(angle = midpoint(arc_diff)@theta, 
+                            multiplier = 1.1 ))
+
+make_angles(a, r = c(.12, .24)) +
+  arc_diff + 
+  arc_diff_label
+  
+```
+
+
+```{r}
+degree(330) + degree(90) == degree(30)
+```
+
+
+
+
+$$\begin{align}20\unicode{xb0} - 40\unicode{xb0} &= -20\unicode{xb0}\\&=340\unicode{xb0}\end{align}$$
+
+```{r fit-neg}
+
+a <- c(40, -60)
+theta1 <- a[2] - a[1]
+
+sum_a <- degree(sum(a))
+
+arc_diff <- arc(
+    start = degree(0),
+    end = degree(sum(a)),
+    color = "orchid4",
+    linewidth = .6,
+    radius = .36,
+    resect_head = .75,
+    arrow_head = arrowheadr::arrow_head_deltoid()
+  )
+
+arc_diff_label <- midpoint(arc_diff) %>% 
+  label(sum_a + " = " + degree(a[1]) + " + " + degree(a[2]),
+        style = radial_just(angle = midpoint(arc_diff)@theta, 
+                            multiplier = 1.1), 
+        color = "orchid4")
+
+make_angles(a, r = c(.12,.24)) +
+  arc_diff + 
+  arc_diff_label + 
+  scale_x_continuous(expand = expansion(mult = c(.07,0)))
+  
+```
+
+```{r}
+degree(10) - degree(20) == degree(350)
+```
+
+$$2\cdot20\unicode{xb0}=40\unicode{xb0}$$
+
+
+```{r}
+2 * degree(20) == degree(40)
+```
+
+$$\begin{align}2\cdot180 &= 360\unicode{xb0}\\&=0\unicode{xb0}\end{align}$$
+
+```{r}
+2 * degree(180) == degree(0)
+```
+
+# Trigonometry
+
+Angles can take the three standard trigonometric functions
+
+```{r}
+x <- -60
+theta <- degree(x)
+o <- point(0,0)
+p <- polar(theta, 1)
+cos(theta)
+sin(theta)
+tan(theta)
+
+ ggplot() +
+  # theme_void() +
+  coord_equal() +
+   arrow_segment(o, 
+                 p2 = polar(theta = degree(c(0,x)), 
+                            r = 1)) + 
+   circle(fill = NA_character_, color = "black") + 
+   segment(point(cos(theta), 0), p) +
+   segment(p, p + polar(degree(x - 90), tan(theta)))
+  
+```
+
+Benefits of using trigonometric functions with angles instead of numeric radians include:
+
+* Angle metric conversions are handled automatically.
+* Under the hood, the `cospi`, `sinpi`, and `tanpi` functions are used to get the rounding right on key locations (e.g., 90 degrees, 180 degrees)
+
+For example, `tan(pi)` is slightly off from its true value of 0.
+
+```{r}
+tan(pi)
+```
+
+By contrast, `tan(radian(pi))` rounds to 0 exactly.
+
+```{r}
+tan(radian(pi))
+```
+

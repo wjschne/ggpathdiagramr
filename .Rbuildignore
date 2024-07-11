@@ -1,4 +1,11 @@
-^pathdiagram\.Rproj$
+^ggpathdiagramr\.Rproj$
 ^\.Rproj\.user$
 scratch.R
 ^README\.Rmd$
+^_pkgdown\.yml$
+^docs$
+^pkgdown$
+^\.github$
+
+^vignettes/*_files$
+^LICENSE\.md$

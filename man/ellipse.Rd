@@ -8,9 +8,34 @@ ellipse(
   center = class_missing,
   a = class_missing,
   b = class_missing,
+  m1 = class_missing,
+  m2 = class_missing,
   theta = class_missing,
-  n = class_missing
+  n = class_missing,
+  style = class_missing,
+  ...
 )
+}
+\arguments{
+\item{center}{point at center of ellipse}
+
+\item{a}{distance of semi-major axis}
+
+\item{b}{distance of semi-minor axis}
+
+\item{m1}{exponent of semi-major axis}
+
+\item{m2}{exponent of semi-minor axis}
+
+\item{theta}{ellipse rotation}
+
+\item{n}{number of polygon points}
+
+\item{style}{a style object}
+
+\item{...}{<\code{\link[rlang:dyn-dots]{dynamic-dots}}> arguments passed to style object if style is empty}
+
+\item{xy}{polygon points}
 }
 \description{
 an ellipse

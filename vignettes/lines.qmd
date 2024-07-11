@@ -1,0 +1,200 @@
+---
+title: "Lines"
+knitr:
+  opts_chunk: 
+    collapse: true
+    comment: '#>'
+format: 
+  html:
+    toc: true
+vignette: >
+  %\VignetteIndexEntry{lines}
+  %\VignetteEngine{quarto::html}
+  %\VignetteEncoding{UTF-8}
+---
+
+# Setup Code
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 6,
+  fig.height = 6, 
+  dev = "ragg_png"
+)
+library(ggpathdiagramr)
+library(ggplot2)
+library(dplyr)
+
+
+```
+Loading packages and creating a base plot so that illustrations can happen with less code.
+
+```{r setup}
+library(ggpathdiagramr)
+library(ggplot2)
+library(dplyr)
+
+# base plot 
+bp <- ggplot() +
+  coord_equal(xlim = c(-4, 4), 
+              ylim = c(-4, 4))
+```
+
+
+
+```{r bp}
+#| echo: false
+bp <- ggplot() +
+  coord_equal() +
+  scale_x_continuous(labels = WJSmisc::signs_centered, limits = c(-4,4)) +
+  scale_y_continuous(labels = signs::signs, limits = c(-4,4)) +
+  theme_grey(base_size = 16) +
+  theme(axis.title.y = element_text(angle = 0, hjust = .5, vjust = .5))
+```
+
+# Making Lines
+
+Lines can be constructed from a slope and an intercept:
+
+```{r}
+l <- line(slope = 2, intercept = 1)
+l
+
+```
+
+```{r fig-slopeintercept}
+#| fig-cap: !expr 'paste0("A line with slope of ", l@slope, " and intercept of ", l@intercept)'
+#| code-fold: true
+
+l_lb <- label(p = anchor(l,0),
+        label = equation(l),
+        vjust = 0, 
+        angle = l@angle@degree, 
+        size = 16)
+
+# plot line l and label l_lb
+bp + l + l_lb
+```
+
+
+Because the default slope is 0, a horizontal line can be set with just the intercept:
+
+```{r}
+h <- line(intercept = 2)
+h
+```
+
+```{r fig-horitonal}
+#| fig-cap: !expr 'paste0("A horizontal line intercept of ", h@intercept)'
+#| code-fold: true
+bp + 
+  h + 
+  label(anchor(h, 0), 
+        label = "*y* = 2", 
+        size = 16, 
+        vjust = 0)
+```
+
+
+A vertical line can be set with the x-intercept:
+
+```{r}
+v <- line(x_intercept = -1)
+v
+```
+```{r fig-v}
+#| fig-cap: A verical line with 
+#| code-fold: true
+bp + 
+  v + 
+  label(point(v@x_intercept, 0), 
+        label = "*x* = -1", 
+        size = 16, 
+        vjust = 0,
+        angle = 90)
+```
+
+
+
+Any line---horizontal, vertical, or sloped---can be constructed from the coefficients of the general form of a line:
+
+$$
+ax+by+c=0
+$$
+
+```{r}
+l_123 <- line(a = 1, b = 2, c = 3)
+```
+
+```{r}
+bp +
+  l_123 +
+  label(
+    p = anchor(l_123, 0),
+    label = equation(l_123, type = "general"),
+    angle = l_123@angle@degree,
+    vjust = 0, 
+    size = 16
+  )
+```
+
+With respect to the general form, the slope is equal to $-\frac{a}{b}$, the y-intercept is equal to $-\frac{c}{b}$, and the x-intercept is equal to $-\frac{c}{a}$
+
+# Methods
+
+## Projections and Distances
+
+A point can be "projected" onto a line. Imagine shining a light on the point in a direction perpendicular to the line. The point's shadow on the line would be the shortest distance between the line and the point.
+
+
+```{r}
+p <- point(1,-1, size = 3)
+l <- line(slope = 2, intercept = 2)
+# Point p projected onto line l
+p_projected <- projection(p, l)
+# segment from p to p_projected
+s_projected <- segment(p, p_projected, 
+                          linetype = "dashed")
+
+```
+
+
+The shortest distance from a point to a line can be calculated.
+
+```{r}
+# distance from point p to line l
+dist_p_l <- distance(p, l)
+```
+
+```{r}
+bp +
+  l +
+  label(anchor(l, 0),
+        label = equation(l),
+        angle = l@angle@degree,
+        vjust = 0,
+        size = 14) +
+  p +
+  label(p, 
+        vjust = 1, 
+        hjust = 0, 
+        size = 14) +
+  p_projected +
+  label(p_projected, 
+        vjust = 0, 
+        hjust = 1, 
+        size = 14) +
+  s_projected +
+  label(
+    midpoint(s_projected),
+    label = dist_p_l,
+    angle = s_projected@line@angle@degree,
+    vjust = 0, 
+    size = 14
+  ) 
+```
+
+
+

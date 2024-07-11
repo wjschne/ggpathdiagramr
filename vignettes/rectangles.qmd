@@ -1,0 +1,127 @@
+---
+title: "Rectangles"
+knitr:
+  opts_chunk: 
+    collapse: true
+    comment: '#>'
+format: 
+  html:
+    toc: true
+vignette: >
+  %\VignetteIndexEntry{rectangles}
+  %\VignetteEngine{quarto::html}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r}
+#| include: false
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+
+library(ggpathdiagramr)
+library(ggplot2)
+```
+
+```{r setup}
+library(ggpathdiagramr)
+library(ggplot2)
+```
+
+# Specifying a Rectangle
+
+A rectangle has 4 corners (`northeast`, `northwest`, `southwest`, and `southeast`). It has a center. It has width and height. For the purpose of demonstration, we can specify all these features, though in practice not all of them are necessary.
+
+```{r}
+# northeast corner
+ne <- point(4,2) 
+# northwest corner
+nw <- point(0,2)
+# southwest corner
+sw <- point(0,0)
+# southeast corner
+se <- point(4,0)
+# centner point
+cent <- point(2,1)
+# width
+w <- 4
+# height
+h <- 2
+```
+
+
+If you give the `rectangle` function enough information to deduce where its four corners will be, all other features will be calculated. All of the following will give the same rectangle:
+
+## Give width, height, and any point
+
+An easy way to specify a rectangle is to specify its center, and both size dimensions (width and height)
+
+
+```{r}
+r1 <- rectangle(width = w, height = h, center = cent, fill = NA_character_, color = "black")
+r1
+
+
+
+```
+
+```{r}
+ggplot() + 
+  coord_equal() + 
+  r1
+```
+
+
+
+However, with a known height and width, a rectangle can be specified with any point. Note these rectangles are equivalent:
+
+```{r}
+r1 == rectangle(width = w, height = h, northeast = ne)
+r1 == rectangle(width = w, height = h, northwest = nw)
+r1 == rectangle(width = w, height = h, southwest = sw)
+r1 == rectangle(width = w, height = h, southeast = se)
+```
+
+
+## Give the center and any of the 4 corners
+
+A rectangle can be specified with the center any other corner. These rectangles are equivalent:
+
+```{r}
+r1 == rectangle(center = cent, northeast = ne)
+r1 == rectangle(center = cent, northwest = nw)
+r1 == rectangle(center = cent, southwest = sw)
+r1 == rectangle(center = cent, southeast = se)
+```
+
+## Give opposite corners
+
+A rectangle can be specified with points from opposite corners. These rectangles are equivalent:
+
+
+```{r}
+r1 == rectangle(northeast = ne, southwest = sw)
+r1 == rectangle(northwest = nw, southeast = se)
+```
+
+## Give width and two points on either side
+
+A rectangle can be specified with the width and 2 points from the left or right side. These rectangles are equivalent:
+
+```{r}
+r1 == rectangle(width = 4, northwest = nw, southwest = sw)
+r1 == rectangle(width = 4, northeast = ne, southeast = se)
+
+
+```
+
+## Give height and two points on top or bottom
+
+A rectangle can be specified with the height and 2 points from the top or bottom side. These rectangles are equivalent:
+
+```{r}
+r1 == rectangle(height = 2, northwest = nw, northeast = ne)
+r1 == rectangle(height = 2, southwest = sw, southeast = se)
+```
+

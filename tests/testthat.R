@@ -7,6 +7,6 @@
 # * https://testthat.r-lib.org/articles/special-files.html
 
 library(testthat)
-library(pathdiagram)
+library(ggpathdiagramr)
 
-test_check("pathdiagram")
+test_check("ggpathdiagramr")

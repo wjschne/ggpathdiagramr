@@ -1,0 +1,183 @@
+---
+title: "Points"
+format: 
+  html:
+    toc: true
+vignette: >
+  %\VignetteIndexEntry{points}
+  %\VignetteEngine{quarto::html}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+library(ggpathdiagramr)
+library(ggplot2)
+library(dplyr)
+```
+
+```{r setup}
+library(ggpathdiagramr)
+library(ggplot2)
+library(dplyr)
+```
+
+Points have x and y coordinates. 
+
+```{r points}
+p1 <- point(1,0)
+p2 <- point(0,1)
+```
+
+## Polar Coordinates
+
+A point's x and y coordinates can be specifed in polar coordinates
+
+* `@r`: The distance from the origin to the point (i.e., the vector's magnitude)
+* `@theta`: The angle (in radians) from the line on the x-axis to the line containing the vector.
+
+```{r}
+p2
+p2@r
+p2@theta
+```
+
+A point can be created with polar coordinates
+
+```{r}
+polar(r = 5, theta = angle(degree = 60))
+```
+
+If the angle is numeric instead of an angle, it is assumed to be in radians. 
+
+```{r}
+point(r = 1, theta = pi) == point(r = 1, theta = degree(180))
+
+```
+
+
+A point can be converted to a 1 &times; 2 matrix:
+
+```{r}
+p1@xy
+as.matrix(p1)
+```
+
+# Methods
+
+## Arithmetic
+
+Points can be added and subtracted:
+
+```{r}
+p3 <- p1 + p2
+p3
+p3 - p2
+```
+
+Points can be scaled with constants
+
+```{r}
+p3 * 2
+p3 / 4
+```
+
+# Distance
+
+The distance between two points:
+
+```{r}
+distance(p1, p2)
+```
+
+The shortest distance from a point to a line:
+
+```{r}
+l1 <- line(slope = 1, intercept = 2)
+distance(p1, l1)
+```
+
+The shortest distance from a point to a circle's edge:
+
+```{r}
+c1 <- circle(center = point(0,0), radius = 1)
+# p1 is on circle, so its distance is 0
+distance(p1, c1)
+# p3 is outside the circle
+distance(p3, c1)
+# p4 is inside the circle
+p4 <- point(0,.5)
+distance(p4, c1)
+```
+
+
+
+```{r}
+ggplot() +
+  coord_equal() + 
+  xlim(-3,3) + 
+  ylim(-3,3) +
+  p1
+```
+
+
+
+# Point Lists
+
+Points can be concatenated in a list like any other object.
+
+```{r}
+c(p1, p2)
+```
+
+However, extracting properties from that list is more convenient if the list is made into a `point_list`.
+
+```{r}
+pts <- point_list(c(p1, p2, p3))
+pts@x
+pts@y
+pts@r
+pts@theta@degree
+```
+
+
+```{r}
+ggplot() +
+  coord_equal() +
+  pts
+```
+
+
+A list of points can also be created with x and y vectors separately:
+
+```{r}
+x <- c(2, 4, 5, 0)
+y <- c(0, 4, 2, 5)
+pts <- point(x, y)
+```
+
+A point list can also be created directly from a two-column matrix:
+
+```{r}
+# A two-column matrix from x and y
+m <- cbind(x,y)
+pts <- point(m)
+```
+
+
+
+```{r}
+ggplot() +
+  coord_equal() +
+  pts
+```
+
+
+
+
+
+
+
