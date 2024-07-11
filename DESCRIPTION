@@ -8,7 +8,7 @@ Authors@R: c(
 Description: Makes path diagrams for path analysis and structural equation
     models.
 License: CC0
-Language: en-US
+Language: en-GB
 Imports: 
     arrowheadr,
     ggarrow,
