@@ -17,7 +17,7 @@ vignette: >
 library(ggpathdiagramr)
 library(ggplot2)
 library(dplyr)
-knitr::opts_chunk$set(dev = "svg")
+knitr::opts_chunk$set(dev = "svg", fig.height = 8, fig.width = 8)
 ```
 
 ```{r setup}
@@ -41,38 +41,110 @@ $\frac{1}{2}$ | $\frac{\tau}{2}~\text{or}~\pi$ | $180^\circ$ | $200$ |
 $\frac{2}{3}$ | $\frac{2\tau}{3}~\text{or}~\frac{4\pi}{3}$ | $240^\circ$ | $266.\bar{6}$ |
 $1$ | $\tau~\text{or}~2\pi$ | $360^\circ$ | $400$ |
 
+```{r}
+#| label: fig-angles
+#| code-fold: true
+#| fig-cap: "Angle Metrics"
+#| fig-width: 8
+#| fig-height: 8
+theta <- degree(seq(0,330, 30))
+p <- polar(theta, r = 1)
+
+r <- seq(0.4, 1, length.out = 4)
+my_shades <- tinter::tinter("royalblue", 
+                            steps = 7, 
+                            direction = "tints")[1:4]
 
 
-One can create equivalent angles with any of the four metrics.
+ggplot() +
+  coord_equal() +
+  theme_void() +
+  circle(
+    center = point(),
+    radius = rev(seq(0.4, 1, length.out = 4)),
+    fill = my_shades,
+    color = NA,
+    linewidth = .25
+  ) +
+  segment(point(), p, linewidth = .25) +
+  purrr::map2(r, 
+              list(degree(theta), gradian(theta), radian(theta), turn(theta)), 
+              \(radius, ang) {
+                as.geom(label(polar(theta = ang, r = radius - .1), 
+                              label = ang, 
+                              fill = my_shades[5 - match(radius, r)],
+                              ),
+                        family = "Roboto Condensed")
+                })  +
+  label(
+    p = polar(degree(90), r = r),
+    label = c("Degrees", "Gradians", "Radians", "Turns"),
+    vjust = 1.13,
+    style = style_label(
+      fill = rev(my_shades), 
+      family = "Roboto Condensed",
+      fontface = "bold") 
+  )
+
+
+```
+
+
+One can create equivalent angles with any of the four metrics with `angle` function.
 
 ```{r right}
-right_angle <- angle(degree = 90)
-right_angle == angle(turn = 1 / 4) 
-right_angle == angle(radian = pi / 2)
-right_angle == angle(gradian = 100)
+angle(degree = 90)
+angle(turn = 1 / 4) 
+angle(radian = pi / 2)
+angle(gradian = 100)
 ```
 
 For the sake of convenience, one can create angles in each of these metrics directly:
 
 ```{r convenient_wrappers}
-right_angle == degree(90)
-right_angle == turn(1 / 4)
-right_angle == radian(pi / 2)
-right_angle == gradian(100)
+degree(90)
+turn(1 / 4)
+radian(pi / 2)
+gradian(100)
 ```
+
+Although these methods have convenient printing, under the hood they are still angles with all four properties:
+
+```{r still_angles}
+r1 <- radian(pi)
+r1
+r1@radian
+r1@degree
+```
+
 
 # Characters
 
-For labeling, it is convenient to convert angles to text:
+For labeling, sometimes is convenient to convert angles to text:
 
-```{r}
-a30 <- degree(30)
-as.character(a30)
+```{r ascharacter}
+as.character(degree(90))
+as.character(turn(.25))
+as.character(radian(.5* pi))
+as.character(gradian(10))
 ```
+
+# Conversions
+
+Any of the metrics can be converted to any other:
+
+```{r angle_convert}
+a <- angle(degree = 60)
+a
+radian(a)
+turn(a)
+gradian(a)
+```
+
 
 # Arithmetic Operations
 
-Angles can be added, subtracted, multiplied, and divided. The result in turns can be any value, but degrees, radians, and gradians are always between -1 and +1 turns (&pm;360 degrees or &pm;&tau; radians, or &pm;400 gradians).
+Angles can be added, subtracted, multiplied, and divided. The result in turns can be any real number, but degrees, radians, and gradians are always recalculated to be between -1 and +1 turns (&pm;360 degrees or &pm;&tau; radians, or &pm;400 gradians).
 
 $$30\unicode{xb0} + 60\unicode{xb0} = 90\unicode{xb0}$$
 
@@ -82,8 +154,13 @@ $$30\unicode{xb0} + 60\unicode{xb0} = 90\unicode{xb0}$$
 ```{r fig-3060}
 #| code-fold: true
 #| fig-cap: "30&deg; + 60&deg; = 90&deg;"
+#| fig-width: 7
+#| fig-height: 7
 
-make_angles <- function(a = c(100, 330), r = c(.15, .15), label_adjust = c(0,0)) {
+make_angles <- function(a = c(100, 330), 
+                        r = c(.1, .2, .3), 
+                        label_adjust = c(0,0,0), 
+                        multiplier = c(1,1,1.1)) {
   style_A <- style(color = "firebrick", 
                    arrow_head = arrowheadr::arrow_head_deltoid(), 
                    linewidth = .65,
@@ -104,52 +181,8 @@ arc_B <- arc(radius = r[2],
 
 arc_A_mid <- midpoint(arc_A)
 arc_B_mid <- midpoint(arc_B)
-# polar(theta = v, r = 1, style = style_list(c(style_A, style_A, style_B)))@style
-# style_point() + style_list(c(style_A, style_A, style_B))
-ggplot() +
-  theme_void() +
-  coord_equal()  +
-  arc_A +
-  arc_B +
-  arrow_segment(p1 = point(), p2 = polar(theta = degree(c(0,a[1],sum(a))), r = 1), style = style_list(c(style_A, style_A, style_B))) +
-  label(
-    arc_A_mid,
-    style = radial_just(style = style_A,
-                        angle = arc_A_mid@theta + degree(180 + label_adjust[1])),
-    label = as.character(v1),
-  ) +
-  label(
-    arc_B_mid,
-    style = radial_just(style = style_B,
-                        arc_B_mid@theta + degree(180 + label_adjust[2])),
-    label = as.character(v2),
-  )
-}
-
-make_angles(c(30, 60)) +
-  rectangle(southwest = point(0,0), northeast = point(.05, .05)) 
 
 
-```
-
-
-```{r add}
-degree(30) + degree(60) == degree(90) 
-```
-
-
-$$
-\begin{align}
-330\unicode{xb0} + 100\unicode{xb0} &= 430\unicode{xb0}\\
-&= 430\unicode{xb0}-360\unicode{xb0}\\
-&=70\unicode{xb0}\end{align}
-$$
-
-
-```{r fig-100330}
-#| code-fold: true
-#| fig-cap: "100&deg; + 330&deg; = 70&deg;"
-a <- c(80, 300)
 theta1 <- a[2] - a[1]
 
 sum_a <- degree(sum(a))
@@ -158,25 +191,93 @@ arc_diff <- arc(
     start = degree(0),
     end = degree(degree(sum(a))@degree),
     linewidth = .6,
-    radius = .36,
+    radius = r[3],
     resect_head = .75,
-    arrow_head = arrowheadr::arrow_head_deltoid()
+    arrow_head = arrowheadr::arrow_head_deltoid(),
+    color = "orchid4"
   )
 
 arc_diff_label <- midpoint(arc_diff) %>% 
   label(sum_a + " = " + degree(a[1]) + " + " + degree(a[2]),
-        style = radial_just(angle = midpoint(arc_diff)@theta, 
-                            multiplier = 1.1 ))
+        style = polar_just(angle = midpoint(arc_diff)@theta, 
+                            multiplier = multiplier[3] ),
+        color = "orchid4")
 
-make_angles(a, r = c(.12, .24)) +
+ggplot() +
+  theme_void() +
+  coord_equal()  +
+  arc_A +
+  arc_B +
+  arrow_segment(p1 = point(), p2 = polar(theta = degree(c(0,a[1],sum(a))), r = 1), style = style_list(c(style_A, style_A, style_B))) +
+  label(
+    arc_A_mid,
+    style = polar_just(style = style_A,
+                        angle = arc_A_mid@theta + degree(label_adjust[1]),
+                        multiplier = multiplier[1]),
+    label = as.character(v1),
+  ) +
+  label(
+    arc_B_mid,
+    style = polar_just(style = style_B,
+                        arc_B_mid@theta + degree(label_adjust[2]),
+                        multiplier = multiplier[2]),
+    label = as.character(v2),
+  ) + 
   arc_diff + 
   arc_diff_label
+}
+
+make_angles(c(30, 60), r = c(.12,.24, .36), multiplier = c(1,1,1.2)) +
+  rectangle(southwest = point(0,0), northeast = point(.05, .05)) 
+
+
+```
+
+
+```{r add}
+degree(30) + degree(60)
+```
+
+Adding a number to the degree class assumes the number is in the degree metric.
+
+```{r add_degree}
+degree(30) + 10
+```
+
+Likewise, adding a number to a radian (or an angle by default) makes a radian:
+
+```{r add_radian}
+radian(pi) + 0.5 * pi
+```
+
+Turns and gradians work the same way:
+
+```{r add_turn_gradian}
+turn(.1) + .2
+gradian(100) + 100
+```
+
+When degrees are outside the range of &pm;360, they recalculate:
+
+$$
+\begin{align}
+80\unicode{xb0} + 300\unicode{xb0} &= 380\unicode{xb0}\\
+&= 380\unicode{xb0}-360\unicode{xb0}\\
+&=20\unicode{xb0}\end{align}
+$$
+
+
+```{r fig-80300}
+#| code-fold: true
+#| fig-cap: "100&deg; + 330&deg; = 70&deg;"
+
+make_angles(c(80, 300)) 
   
 ```
 
 
-```{r}
-degree(330) + degree(90) == degree(30)
+```{r add380}
+degree(80) + degree(300)
 ```
 
 
@@ -184,77 +285,128 @@ degree(330) + degree(90) == degree(30)
 
 $$\begin{align}20\unicode{xb0} - 40\unicode{xb0} &= -20\unicode{xb0}\\&=340\unicode{xb0}\end{align}$$
 
-```{r fit-neg}
-
-a <- c(40, -60)
-theta1 <- a[2] - a[1]
-
-sum_a <- degree(sum(a))
-
-arc_diff <- arc(
-    start = degree(0),
-    end = degree(sum(a)),
-    color = "orchid4",
-    linewidth = .6,
-    radius = .36,
-    resect_head = .75,
-    arrow_head = arrowheadr::arrow_head_deltoid()
-  )
-
-arc_diff_label <- midpoint(arc_diff) %>% 
-  label(sum_a + " = " + degree(a[1]) + " + " + degree(a[2]),
-        style = radial_just(angle = midpoint(arc_diff)@theta, 
-                            multiplier = 1.1), 
-        color = "orchid4")
-
-make_angles(a, r = c(.12,.24)) +
-  arc_diff + 
-  arc_diff_label + 
-  scale_x_continuous(expand = expansion(mult = c(.07,0)))
-  
+```{r fig-neg}
+#| code-fold: true
+#| fig-cap: "40&deg; &minus; 60&deg; = &minus;20&deg;"
+#| fig-width: 7
+#| fig-height: 7
+make_angles(c(40, -60)) 
 ```
 
-```{r}
-degree(10) - degree(20) == degree(350)
+```{r subtract}
+degree(10) - degree(20)
 ```
 
 $$2\cdot20\unicode{xb0}=40\unicode{xb0}$$
 
 
-```{r}
-2 * degree(20) == degree(40)
+```{r mult20}
+2 * degree(20)
 ```
 
 $$\begin{align}2\cdot180 &= 360\unicode{xb0}\\&=0\unicode{xb0}\end{align}$$
 
-```{r}
-2 * degree(180) == degree(0)
+```{r mult180}
+2 * degree(180)
 ```
 
 # Trigonometry
 
 Angles can take the three standard trigonometric functions
 
-```{r}
-x <- -60
-theta <- degree(x)
-o <- point(0,0)
-p <- polar(theta, 1)
+```{r trig}
+theta <- degree(60)
 cos(theta)
 sin(theta)
 tan(theta)
-
- ggplot() +
-  # theme_void() +
-  coord_equal() +
-   arrow_segment(o, 
-                 p2 = polar(theta = degree(c(0,x)), 
-                            r = 1)) + 
-   circle(fill = NA_character_, color = "black") + 
-   segment(point(cos(theta), 0), p) +
-   segment(p, p + polar(degree(x - 90), tan(theta)))
-  
 ```
+
+
+```{r fig-trig}
+#| code-fold: true
+#| fig-cap: "Trigonometric functions"
+#| fig-width: 9
+#| fig-height: 6.6
+
+o <- point(0, 0)
+p <- polar(theta, 1)
+
+# col <- purrr::map2_chr(scico::scico(6, palette = "hawaii"),c(0.01,0.01,0.01,0.01,.15, .4), tinter::darken)
+
+col <- c("#8C0172", "#944046", "#9B7424", 
+         "#8EB63B", "#53BD91", "#6C939A")
+degree_arc <- arc(end = theta,
+                  radius = .25,
+                  linewidth = .2)
+
+seg_sin <- segment(polar(theta = 0, r = cos(theta)), 
+                   p, 
+                   color = col[1], 
+                   linewidth = .5)
+seg_cos <- segment(point(0, sin(theta)), 
+                   point(cos(theta), sin(theta)), 
+                   color = col[2], 
+                   linewidth = .5)
+seg_tan <- segment(p, 
+                   p + polar(theta - 90, r = tan(theta)), 
+                   color = col[3], 
+                   linewidth = .5)
+
+seg_cot <- segment(p, 
+                   p + polar(theta + 90, r = 1 / tan(theta)), 
+                   color = col[4], 
+                   linewidth = .5)
+
+seg_sec <- segment(o, point(1 / cos(theta)), 0, color = col[5])
+seg_csc <- segment(o, point(0, 1 / sin(theta)), color = col[6])
+
+seg_theta <- arrow_segment(o, p2 = p)
+
+
+ggplot() +
+  theme_void() +
+  coord_equal() +
+  line(intercept = 0, 
+       color = "gray", 
+       linewidth = .25) +
+  line(xintercept = 0, 
+       color = "gray", 
+       linewidth = .25) +
+  degree_arc +
+  label(degree_arc) +
+  seg_theta + 
+  label(seg_theta, label = "*r* = 1") +
+  circle(fill = NA, color = "gray") +
+  seg_sin +
+  label(seg_sin, 
+        label = "sin(" + theta + ") = " + 
+          round(sin(theta), 2), 
+        vjust = 1) +
+  seg_cos +
+  label(p = seg_cos, 
+        label = "cos(" + theta + ") = " + 
+          round(cos(theta), 2), 
+        vjust = 1) +
+  seg_tan +
+  label(p = seg_tan, 
+        label = "tan(" + theta + ") = " + 
+          round(tan(theta), 2)) + 
+  seg_sec +
+  label(p = seg_sec, 
+        label = "sec(" + theta + ") = " + 
+          round(1 / cos(theta), 2), 
+        vjust = 1) + 
+  seg_cot + 
+  label(p = seg_cot, 
+        label = "cot(" + theta + ") = " + 
+          round(1 / tan(theta), 2)) + 
+  seg_csc +
+  label(p = seg_csc, 
+        label = "csc(" + theta + ") = " + 
+          round(1 / sin(theta), 2))
+   
+```
+
 
 Benefits of using trigonometric functions with angles instead of numeric radians include:
 
@@ -263,13 +415,13 @@ Benefits of using trigonometric functions with angles instead of numeric radians
 
 For example, `tan(pi)` is slightly off from its true value of 0.
 
-```{r}
+```{r tan}
 tan(pi)
 ```
 
 By contrast, `tan(radian(pi))` rounds to 0 exactly.
 
-```{r}
+```{r tanpi}
 tan(radian(pi))
 ```
 

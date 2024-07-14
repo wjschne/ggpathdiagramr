@@ -14,17 +14,21 @@ style_base(alpha = class_missing, color = class_missing)
 
 style(
   alpha = class_missing,
-  color = class_missing,
   angle = class_missing,
-  arrow = class_missing,
   arrow_head = class_missing,
   arrow_fins = class_missing,
   arrow_mid = class_missing,
+  color = class_missing,
   family = class_missing,
   fill = class_missing,
   fontface = class_missing,
   hjust = class_missing,
   justify = class_missing,
+  label.color = class_missing,
+  label.margin = class_missing,
+  label.padding = class_missing,
+  label.r = class_missing,
+  label.size = class_missing,
   length = class_missing,
   length_head = class_missing,
   length_fins = class_missing,
@@ -33,8 +37,13 @@ style(
   lineheight = class_missing,
   linejoin = class_missing,
   linewidth_fins = class_missing,
+  linewidth_head = class_missing,
   linewidth = class_missing,
   linetype = class_missing,
+  nudge_x = class_missing,
+  nudge_y = class_missing,
+  polar_just_angle = class_missing,
+  polar_just_multiplier = class_missing,
   resect = class_missing,
   resect_fins = class_missing,
   resect_head = class_missing,
@@ -44,7 +53,9 @@ style(
   stroke = class_missing,
   stroke_color = class_missing,
   stroke_width = class_missing,
-  vjust = class_missing
+  text.color = class_missing,
+  vjust = class_missing,
+  ...
 )
 
 style_point(
@@ -53,7 +64,8 @@ style_point(
   fill = class_missing,
   shape = class_missing,
   size = class_missing,
-  stroke = class_missing
+  stroke = class_missing,
+  ...
 )
 
 style_line(
@@ -63,27 +75,29 @@ style_line(
   linejoin = class_missing,
   linewidth = class_missing,
   linetype = class_missing,
-  arrow = class_missing
+  ...
 )
 
 style_arrow(
   alpha = class_missing,
-  color = class_missing,
-  lineend = class_missing,
-  linejoin = class_missing,
-  linewidth = class_missing,
-  linetype = class_missing,
-  arrow = class_missing,
   arrow_fins = class_missing,
   arrow_head = class_missing,
   arrow_mid = class_missing,
-  length_head = class_missing,
+  color = class_missing,
+  justify = class_missing,
   length_fins = class_missing,
+  length_head = class_missing,
   length_mid = class_missing,
+  lineend = class_missing,
+  linejoin = class_missing,
+  linewidth = class_missing,
   linewidth_fins = class_missing,
+  linewidth_head = class_missing,
+  linetype = class_missing,
   resect = class_missing,
   resect_fins = class_missing,
-  resect_head = class_missing
+  resect_head = class_missing,
+  ...
 )
 
 style_polygon(
@@ -93,9 +107,9 @@ style_polygon(
   linejoin = class_missing,
   linewidth = class_missing,
   linetype = class_missing,
-  arrow = class_missing,
   fill = class_missing,
-  rule = class_missing
+  rule = class_missing,
+  ...
 )
 
 style_label(
@@ -103,18 +117,23 @@ style_label(
   color = class_missing,
   angle = class_missing,
   family = class_missing,
+  fill = class_missing,
   fontface = class_missing,
   hjust = class_missing,
   label.color = class_missing,
-  label.padding = class_missing,
   label.margin = class_missing,
+  label.padding = class_missing,
   label.r = class_missing,
   label.size = class_missing,
   lineheight = class_missing,
+  polar_just_angle = class_missing,
+  polar_just_multiplier = class_missing,
   nudge_x = class_missing,
   nudge_y = class_missing,
   size = class_missing,
-  vjust = class_missing
+  text.color = class_missing,
+  vjust = class_missing,
+  ...
 )
 }
 \arguments{
@@ -150,7 +169,7 @@ style_label(
 
 \item{size}{numeric size}
 
-\item{size.unit}{How the size aesthetic is interpreted: as points ("pt"), millimetres ("mm"), centimetres ("cm"), inches ("in"), or picas ("pc").}
+\item{size.unit}{How the size aesthetic is interpreted: as points ("pt"), millimeters ("mm"), centimeters ("cm"), inches ("in"), or picas ("pc").}
 
 \item{vjust}{vertical justification}
 }

@@ -25,7 +25,7 @@ test_that("constructor", {
   l111 <- line(a = 1, b = 1, c = 1)
   expect_identical(l111, line(slope = -1, intercept = -1))
   v1 <- line(a = 1, b = 0, c = -1)
-  expect_identical(v1, line(x_intercept = 1))
+  expect_identical(v1, line(xintercept = 1))
   h1 <- line(a = 0, b = 1, c = -1)
   expect_identical(h1, line(intercept = 1))
   expect_error(line(a = 1, b = 1, c = 1, slope = 3), "The slope is incompatible with parameters a, b, and c.")
@@ -133,7 +133,12 @@ test_that("angles", {
   expect_identical(gradian(50) + 50, gradian(50 + 50))
   expect_identical(turn(.5) + .1, turn(.6))
   expect_true(((radian(.5) + .1) - radian(.6))@radian < .Machine$double.eps)
-  
+  expect_identical(gradian(50) - 1, gradian(49))
+  expect_identical(1 - gradian(50), gradian(-49))
+  expect_identical(gradian(50) / 2 , gradian(25))
+  expect_identical(gradian(50) * 2 , gradian(100))
+  expect_identical(2 * gradian(50), gradian(100))
+
 })
 
 
@@ -175,14 +180,14 @@ test_that("intersection", {
                c(p2, p1))
   expect_equal(intersection(line(intercept = 2), c1),
                point(1,2))
-  l1 <- line(x_intercept = 1)
+  l1 <- line(xintercept = 1)
   p1 <- point(1, 0)
   p2 <- point(1, 2)
   expect_equal(intersection(l1, c1),
                c(p1, p2))
   expect_equal(intersection(c1, l1),
                c(p1, p2))
-  expect_equal(intersection(line(x_intercept = 2), c1),
+  expect_equal(intersection(line(xintercept = 2), c1),
                point(2,1))
   l1 <- line(slope = 1, intercept = 2 * sin(degree(45)))
   c1 <- circle(point(0,0), radius = 1)
@@ -229,13 +234,13 @@ test_that("trig", {
 test_that("rotate", {
   # rotate a line with an angle
   expect_identical(
-    rotate(line(x_intercept = 2), angle(turn = .5)),
-    line(x_intercept = -2)
+    rotate(line(xintercept = 2), angle(turn = .5)),
+    line(xintercept = -2)
   )
   # rotate a line with a numeric radian
   expect_identical(
-    rotate(line(x_intercept = 2), angle(turn = .5)),
-    rotate(line(x_intercept = 2), pi)
+    rotate(line(xintercept = 2), angle(turn = .5)),
+    rotate(line(xintercept = 2), pi)
   )
 
   # rotate a point

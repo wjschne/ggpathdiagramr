@@ -71,7 +71,7 @@ l
 l_lb <- label(p = anchor(l,0),
         label = equation(l),
         vjust = 0, 
-        angle = l@angle@degree, 
+        angle = l@angle@degree,
         size = 16)
 
 # plot line l and label l_lb
@@ -101,7 +101,7 @@ bp +
 A vertical line can be set with the x-intercept:
 
 ```{r}
-v <- line(x_intercept = -1)
+v <- line(xintercept = -1)
 v
 ```
 ```{r fig-v}
@@ -109,7 +109,7 @@ v
 #| code-fold: true
 bp + 
   v + 
-  label(point(v@x_intercept, 0), 
+  label(point(v@xintercept, 0), 
         label = "*x* = -1", 
         size = 16, 
         vjust = 0,

@@ -12,7 +12,7 @@ point(
   y = class_missing,
   theta = class_missing,
   r = class_missing,
-  style = class_missing,
+  style = point@properties$style$default,
   ...
 )
 

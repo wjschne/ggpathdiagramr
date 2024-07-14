@@ -55,20 +55,19 @@ angle <- new_class(
   name = "angle",
   properties = list(
     radian = new_property(
-      getter = function(self)
-       (self@turn %% ifelse(self@turn < 0, -1, 1)) * 2 * pi
+      getter = function(self) {
+        (self@turn %% ifelse(self@turn < 0, -1, 1)) * 2 * pi
+        }
     ),
     degree = new_property(
-      getter = function(self)
-      (self@turn %% ifelse(self@turn < 0, -1, 1)) * 360
+      getter = function(self) {(self@turn %% ifelse(self@turn < 0, -1, 1)) * 360}
     ),
     turn = new_property(
       name = "turn",
       class = class_numeric
     ),
     gradian = new_property(
-      getter = function(self)
-      (self@turn %% ifelse(self@turn < 0, -1, 1)) * 400
+      getter = function(self) {(self@turn %% ifelse(self@turn < 0, -1, 1)) * 400}
     )
   ),
   constructor = function(
@@ -86,11 +85,13 @@ angle <- new_class(
       x <- gradian / 400
     } else {
       x <- 0
-    }    
+    }
 
     if (length(x) > 1) {
-      return(angle_list(lapply(x, angle)))
+      return(angle_list(lapply(x, \(x) angle(turn = x))))
     }
+
+
 
     new_object(S7_object(), turn = x)
 
@@ -98,7 +99,12 @@ angle <- new_class(
   }
 )
 
-
+num2turn <- function(x, object) {
+  e2_class <- match.arg(arg = class(object)[1],
+  choices = c("degree", "radian", "gradian", "turn", "angle"))
+  denominator <- switch(e2_class, degree = 360, radian = 2 * pi, gradian = 400, turn = 1, angle = 2 * pi)
+  x / denominator
+}
 
 
 method(cos, angle) <- function(x) {
@@ -111,60 +117,13 @@ method(tan, angle) <- function(x) {
   tanpi(x@turn * 2)
 }
 
-method(`+`, list(angle, angle)) <- function(e1, e2) {
-  angle(turn = e1@turn + e2@turn)
-}
-method(`-`, list(angle, angle)) <- function(e1, e2) {
-  angle(turn = e1@turn - e2@turn)
-}
-method(`*`, list(angle, angle)) <- function(e1, e2) {
-  angle(turn = e1@turn * e2@turn)
-}
-method(`/`, list(angle, angle)) <- function(e1, e2) {
-  angle(turn = e1@turn / e2@turn)
-}
-
-method(`+`, list(angle, class_numeric)) <- function(e1, e2) {
-  angle(turn = e1@turn + e2 / (2 * pi))
-}
-method(`+`, list(class_numeric, angle)) <- function(e1, e2) {
-  angle(turn = e1 / (2 * pi) + e2@turn)
-}
-
-method(`-`, list(angle, class_numeric)) <- function(e1, e2) {
-  angle(turn = e1@turn - e2 / (2 * pi))
-}
-method(`-`, list(class_numeric, angle)) <- function(e1, e2) {  
-  angle(turn = e1 / (2 * pi) - e2@turn)
-}
-
-method(`*`, list(angle, class_numeric)) <- function(e1, e2) {
-  angle(turn = e1@turn * e2)
-}
-
-method(`*`, list(class_numeric, angle)) <- function(e1, e2) {
-  angle(turn = e1 * e2@turn)
-}
-
-method(`/`, list(angle, class_numeric)) <- function(e1, e2) {
-  angle(turn = e1@turn / e2)
-}
-
-method(`==`, list(angle, angle)) <- function(e1, e2) {
-  abs(e1@turn - e2@turn) <= .Machine$double.eps
-}
-
-method(`<`, list(angle, angle)) <- function(e1, e2) {
-  e1@turn < e2@turn
-}
-
-method(`>`, list(angle, angle)) <- function(e1, e2) {
-  e1@turn > e2@turn
-}
 
 
-class_angle_or_numeric <- new_union(angle, class_numeric)
 
+
+
+class_angle_or_numeric <- new_union(class_numeric, angle)
+class_angle_or_character <- new_union(class_character, angle)
 
 # Angle list----
 #' angle list class
@@ -178,7 +137,7 @@ class_angle_or_numeric <- new_union(angle, class_numeric)
 #' angle_list(c(angle(0), angle(1)))
 angle_list <- new_class(
   name = "angle_list",
-  parent = class_list,
+  parent = shape_list,
   properties = list(
     turn = new_property(
       class_numeric,
@@ -210,6 +169,8 @@ angle_list <- new_class(
   }
 )
 
+angle_or_angle_list <- new_union(angle, angle_list)
+
 method(cos, angle_list) <- function(x) {
   cospi(x@turn * 2)
 }
@@ -220,8 +181,13 @@ method(tan, angle_list) <- function(x) {
   tanpi(x@turn * 2)
 }
 
+method(`+`, list(angle, angle)) <- function(e1, e2) {
+  # This preserves e2's type
+  e2@turn <- e1@turn + e2@turn
+  e2
+}
 
-angle_or_angle_list <- new_union(angle, angle_list)
+
 
 # Angle wrappers ----
 #' degree class
@@ -231,37 +197,15 @@ angle_or_angle_list <- new_union(angle, angle_list)
 degree <- new_class(
   name = "degree",
   parent = angle,
-  constructor = function(degree) {
+  constructor = function(degree = class_missing) {
     if (length(degree) > 1) {
       return(angle_list(lapply(degree, \(x) degree(x))))
     } else {
+      if (S7_inherits(degree, angle)) degree <- degree@degree
       new_object(angle(degree = degree))
     }
   }
 )
-
-method(`+`, list(angle, degree)) <- function(e1, e2) {
-  degree((e1@turn + e2@turn) * 360)
-}
-
-method(`-`, list(angle, degree)) <- function(e1, e2) {
-  degree((e1@turn - e2@turn) * 360)
-}
-
-
-method(`+`, list(degree, class_numeric)) <- function(e1, e2) {
-  e1 + degree(e2)
-}
-method(`+`, list(class_numeric, degree)) <- function(e1, e2) {
-  degree(e1) + e2
-}
-
-method(`-`, list(degree, class_numeric)) <- function(e1, e2) {
-  e1 - degree(e2)
-}
-method(`-`, list(class_numeric, degree)) <- function(e1, e2) {
-  degree(e1) - e2
-}
 
 #' radian class
 #'
@@ -270,11 +214,12 @@ method(`-`, list(class_numeric, degree)) <- function(e1, e2) {
 radian <- new_class(
   name = "radian",
   parent = angle,
-  constructor = function(radian) {
+  constructor = function(radian = class_missing) {
     if (length(radian) > 1) {
       return(angle_list(lapply(radian, \(x) radian(x))))
     }
     else {
+      if (S7_inherits(radian, angle)) radian <- radian@radian
       new_object(angle(radian = radian))
     }
   }
@@ -287,38 +232,17 @@ radian <- new_class(
 turn <- new_class(
   name = "turn",
   parent = angle,
-  constructor = function(turn) {
+  constructor = function(turn = class_missing) {
     if (length(turn) > 1) {
       return(angle_list(lapply(turn, \(x) turn(x))))
     }
     else {
+      if (S7_inherits(turn, angle)) turn <- turn@turn
       new_object(angle(turn = turn))
     }
   }
 )
 
-
-method(`+`, list(angle, turn)) <- function(e1, e2) {
-  turn(e1@turn + e2@turn)
-}
-
-method(`-`, list(angle, turn)) <- function(e1, e2) {
-  turn(e1@turn - e2@turn)
-}
-
-method(`+`, list(turn, class_numeric)) <- function(e1, e2) {
-  e1 + turn(e2)
-}
-method(`+`, list(class_numeric, turn)) <- function(e1, e2) {
-  turn(e1) + e2
-}
-
-method(`-`, list(turn, class_numeric)) <- function(e1, e2) {
-  e1 - turn(e2)
-}
-method(`-`, list(class_numeric, turn)) <- function(e1, e2) {
-  turn(e1) - e2
-}
 
 #' gradian class
 #'
@@ -327,69 +251,132 @@ method(`-`, list(class_numeric, turn)) <- function(e1, e2) {
 gradian <- new_class(
   name = "gradian",
   parent = angle,
-  constructor = function(gradian) {
+  constructor = function(gradian = class_missing) {
     if (length(gradian) > 1) {
-      turn <- gradian / 400
-      return(angle_list(lapply(turn, \(x) gradian(x))))
+      return(angle_list(lapply(gradian, \(x) gradian(x))))
     } else {
+      if (S7_inherits(gradian, angle)) gradian <- gradian@gradian
       new_object(angle(gradian = gradian))
     }
   }
 )
 
 
-method(`+`, list(angle, gradian)) <- function(e1, e2) {  
-  gradian((e1@turn + e2@turn) * 400)
+## addition ----
+method(`+`, list(angle, angle_list)) <- function(e1, e2) {
+  angle_list(purrr::map(e2, \(x) `+`(e1 = e1, e2 = x)))
+}
+method(`+`, list(angle_list, angle)) <- function(e1, e2) {
+  angle_list(purrr::map(e1, \(x) `+`(e1 = x, e2 = e2)))
 }
 
-method(`-`, list(angle, gradian)) <- function(e1, e2) {
-  gradian((e1@turn - e2@turn) * 400)
+method(`+`, list(angle, class_numeric)) <- function(e1, e2) {
+  # This preserves e2's type
+  e1@turn <- e1@turn + num2turn(e2, e1)
+  e1
+}
+method(`+`, list(class_numeric, angle)) <- function(e1, e2) {
+  e2@turn <- num2turn(e1, e2) + e2@turn
+  e2
 }
 
-method(`+`, list(gradian, class_numeric)) <- function(e1, e2) {
-  e1 + gradian(e2)
+
+
+## subtraction ----
+
+method(`-`, list(angle, angle)) <- function(e1, e2) {
+  # This preserves e2's type
+  e2@turn <- e1@turn - e2@turn
+  e2
 }
-method(`+`, list(class_numeric, gradian)) <- function(e1, e2) {
-  gradian(e1) + e2
+method(`-`, list(angle, angle_list)) <- function(e1, e2) {
+  angle_list(purrr::map(e2, \(x) `-`(e1 = e1, e2 = x)))
+}
+method(`-`, list(angle_list, angle)) <- function(e1, e2) {
+  angle_list(purrr::map(e1, \(x) `-`(e1 = x, e2 = e2)))
 }
 
-method(`-`, list(gradian, class_numeric)) <- function(e1, e2) {
-  e1 - gradian(e2)
+method(`*`, list(angle, angle)) <- function(e1, e2) {
+  e2@turn <- e1@turn * e2@turn
+  e2
 }
-method(`-`, list(class_numeric, gradian)) <- function(e1, e2) {
-  gradian(e1) - e2
+method(`/`, list(angle, angle)) <- function(e1, e2) {
+  e2@turn <- e1@turn / e2@turn
+  e2
 }
 
-# as.character ----
 
-# as.character <- new_generic("as.character", dispatch_args = "x")
-method(as.character, degree) <- function(x, ..., digits = 1) {
-  paste0(signs::signs(round(x@degree, digits)), "\u00B0")
+
+method(`-`, list(angle, class_numeric)) <- function(e1, e2) {
+  e1@turn <- e1@turn - num2turn(e2, e1)
+  e1
 }
-method(as.character, radian) <- function(x, ..., digits = 2) {
-  rad <- paste0(round(x@turn * 2, digits), "\u03C0")
-  rad[rad == "1\u03C0"] <- "\u03C0"
-  rad
+method(`-`, list(class_numeric, angle)) <- function(e1, e2) {
+  e2@turn <- num2turn(e1, e2) - e2@turn
+  e2
 }
-method(as.character, gradian) <- function(x, ..., digits = 2) {
-  paste0(round(x@gradian, digits), "grad")
+
+method(`*`, list(angle, class_numeric)) <- function(e1, e2) {
+  e1@turn <- e1@turn * e2
+  e1
 }
-method(as.character, turn) <- function(x, ..., digits = 2) {
-  paste0(round_probability(x@turn, digits = digits), "\u03C4")
+
+method(`*`, list(class_numeric, angle)) <- function(e1, e2) {
+  e2@turn <- e1 * e2@turn
+  e2
 }
+
+method(`/`, list(angle, class_numeric)) <- function(e1, e2) {
+  e1@turn <- e1@turn / e2
+  e1
+}
+
+method(`==`, list(angle, angle)) <- function(e1, e2) {
+  abs(e1@turn - e2@turn) <= .Machine$double.eps
+}
+
+method(`<`, list(angle, angle)) <- function(e1, e2) {
+  e1@turn < e2@turn
+}
+
+method(`>`, list(angle, angle)) <- function(e1, e2) {
+  e1@turn > e2@turn
+}
+
+
 
 method(as.character, angle) <- function(x,
   ...,
-  digits = 2,
-  type = "degree") {
-type <- rlang::arg_match(type, c("degree", "radian", "turn", "gradian"))
-switch(
-type,
-degree = as.character(degree(x@degree), ..., digits = digits),
-radian = as.character(radian(x@radian), ..., digits = digits),
-turn = as.character(turn(x@turn), ..., digits = digits),
-gradian = as.character(gradian(x@gradian), ..., digits = digits)
-)
+  digits = NULL,
+  type = NULL) {
+  if (is.null(type)) {
+    a_class <- match.arg(
+      arg = class(x)[1],
+      choices = c("degree", "radian", "gradian", "turn", "angle"))
+  } else {
+    a_class <- rlang::arg_match(type, c("degree", "radian", "turn", "gradian"))
+  }
+
+
+  if (a_class == "angle") a_class <- "degree"
+
+  if (is.null(digits)) {
+    digits <- c(degree = 0, radian = 2, turn = 2, gradian = 0)[a_class]
+  }
+  switch(
+    a_class,
+    degree = paste0(signs::signs(round(x@degree, digits)), "\u00B0"),
+    radian = ifelse(
+      abs(x@radian - pi) < .Machine$double.eps,
+      "\u03C0",
+      paste0(round(x@turn * 2, digits), "\u03C0")),
+    gradian = paste0(round(x@gradian, digits), ""),
+    turn = paste0(round_probability(x@turn, digits = digits)),
+    angle = 2 * pi)
+}
+
+method(as.character, angle_list) <- function(x, ...) {
+  purrr::map_chr(x, as.character)
 }
 
 method(`+`, list(class_character, angle)) <- function(e1, e2) {
@@ -404,7 +391,33 @@ method(`+`, list(degree, class_character)) <- function(e1, e2) {
   as.character(e1) + e2
 }
 
-method(`+`, list(degree, class_character)) <- function(e1,e2) {
-  as.character(e1) + e2
+
+#' Convert hjust and vjust parameters from polar coordinates
+#' @param x angle
+#' @param multiplier distance
+#' @param axis vertical (v) or horizontal (h)
+#' @export
+polar2just <- new_generic(
+  name = "polar2just",
+  dispatch_args = "x",
+  fun = function(x, multiplier = 1.2, axis = c("h", "v")) {
+    S7_dispatch()
+  }
+)
+method(polar2just, class_numeric) <- function(x, multiplier = 1.2, axis = c("h", "v")) {
+  if (length(multiplier) == 0) multiplier <- 1.2
+  axis <- match.arg(axis)
+  if (axis == "h") {
+    (((cos(x + pi) + 1)/2) - 0.5) * multiplier + 0.5
+  } else {
+    (((sin(x + pi) + 1)/2) - 0.5) * multiplier + 0.5
+  }
+
 }
+
+method(polar2just, angle) <- function(x, multiplier = 1.2, axis = c("h", "v")) {
+  polar2just(x@radian, multiplier, axis)
+}
+
+
 

@@ -7,7 +7,7 @@
 #' @param a constant in general form: a * x + b * y + c = 0
 #' @param slope coefficient in y = slope * x + intercept
 #' @param intercept value of y when x is 0
-#' @param x_intercept value of x when y is 0
+#' @param xintercept value of x when y is 0
 #' @param style a style list
 #' @param ... properties passed to style
 #' @export
@@ -30,7 +30,7 @@ line <- new_class(
         -self@c / self@b
       }
     ),
-    x_intercept = new_property(
+    xintercept = new_property(
       class_numeric,
       getter = function(self) {
         -self@c / self@a
@@ -46,7 +46,7 @@ line <- new_class(
   ),
   constructor = function(slope = class_missing,
                          intercept = class_missing,
-                         x_intercept = class_missing,
+                         xintercept = class_missing,
                          a = class_missing,
                          b = class_missing,
                          c = class_missing,
@@ -76,13 +76,13 @@ line <- new_class(
       if (length(intercept) == 1 && intercept != l@intercept) {
         stop("The intercept is incompatible with parameters a, b, and c.")
       }
-      if (length(x_intercept) == 1 &&
-          x_intercept != l@x_intercept) {
-        stop("The x_intercept is incompatible with parameters a, b, and c.")
+      if (length(xintercept) == 1 &&
+          xintercept != l@xintercept) {
+        stop("The xintercept is incompatible with parameters a, b, and c.")
       }
     } else if (length(slope) <= 1 &&
                length(intercept == 1) &&
-               length(x_intercept) == 0) {
+               length(xintercept) == 0) {
       if (length(slope) == 0) {
         slope <- 0
       }
@@ -100,10 +100,10 @@ line <- new_class(
                           c = c,
                           style = style)
 
-    } else if (length(x_intercept) == 1) {
+    } else if (length(xintercept) == 1) {
       a <- 1
       b <- 0
-      c <- -x_intercept
+      c <- -xintercept
       l <- new_object(S7_object(),
                           a = a,
                           b = b,
@@ -118,14 +118,11 @@ line <- new_class(
   }
 )
 
-method(`+`, list(ggplot_class, line)) <- function(e1, e2) {
-  e1 + as.geom(e2)
-}
 
 # Line list----
 line_list <- new_class(
   name = "line_list",
-  parent = class_list,
+  parent = shape_list,
   properties = list(
     # ax + by + c = 0
     a = new_property(class = class_numeric, getter = function(self) sapply(self, \(x) x@a)),
@@ -133,13 +130,52 @@ line_list <- new_class(
     c = new_property(class = class_numeric, getter = function(self) sapply(self, \(x) x@c)),
     slope = new_property(class = class_numeric, getter = function(self) sapply(self, \(x) x@slope)),
     intercept = new_property(class = class_numeric, getter = function(self) sapply(self, \(x) x@intercept)),
-    x_intercept = new_property(class = class_numeric, getter = function(self) sapply(self, \(x) x@x_intercept)),
+    xintercept = new_property(class = class_numeric, getter = function(self) sapply(self, \(x) x@xintercept)),
     angle = new_property(class = class_numeric, getter = function(self) sapply(self, \(x) x@angle))
   ),
   validator = function(self) {
     allsameclass(self, "line")
   }
 )
+line_or_line_list <- new_union(line, line_list)
+
+method(`+`, list(class_ggplot, line_or_line_list)) <- function(e1, e2) {
+  e1 + as.geom(e2)
+}
+
+method(get_tibble, line) <- function(x) {
+  xs <- c(list(slope = x@slope,
+               intercept = x@intercept,
+               xintercept = x@xintercept),
+          get_non_empty_props(x@style))
+
+  rlang::inject(tibble::tibble(!!!xs))
+}
+
+method(get_tibble, line_list) <- function(x) {
+  purrr::map_df(S7_data(x), get_tibble)
+}
+
+
+method(get_tibble_defaults, line) <- function(x) {
+  get_tibble(x)
+}
+
+method(get_tibble_defaults, line_list) <- function(x) {
+  sp <- style_line(
+    alpha = 1,
+    color = "black",
+    linend = "black",
+    linejoin = 16,
+    linewidth = 1.5,
+    linetype = 0.5
+  )
+  d <- get_tibble(x)
+  for (n in setdiff(colnames(d), c("x", "y"))) {
+    d[is.na(pull(d, n)), n] <- prop(sp, n)
+  }
+  d
+}
 
 
 # Segment----
@@ -220,7 +256,7 @@ method(`-`, list(point, segment)) <- function(e1, e2) {
   segment(e1 - e2@p1, e1 - e2@p2)
 }
 
-method(`+`, list(ggplot_class, segment)) <- function(e1, e2) {
+method(`+`, list(class_ggplot, segment)) <- function(e1, e2) {
   e1 + as.geom(e2)
 }
 
@@ -240,7 +276,7 @@ method(`+`, list(ggplot_class, segment)) <- function(e1, e2) {
 #' segment_list(c(s1,s2))
 segment_list <- new_class(
   name = "segment_list",
-  parent = class_list,
+  parent = shape_list,
   properties = list(
     p1 = new_property(
       point_list,
@@ -272,4 +308,73 @@ segment_list <- new_class(
 )
 
 segment_or_segment_list <- new_union(segment, segment_list)
-line_or_line_list <- new_union(line, line_list)
+
+
+method(`+`, list(class_ggplot, segment_list)) <- function(e1, e2) {
+  e1 + as.geom(e2)
+}
+
+
+method(get_tibble, segment) <- function(x) {
+  xs <- c(list(x = x@p1@x,
+               xend = x@p2@x,
+               y = x@p1@y,
+               yend = x@p2@y),
+          get_non_empty_props(x@style))
+
+  rlang::inject(tibble::tibble(!!!xs))
+}
+
+
+method(get_tibble_defaults, segment_list) <- function(x) {
+  sp <- style_line(
+    alpha = 1,
+    color = "black",
+    linend = "black",
+    linejoin = 16,
+    linewidth = 1.5,
+    linetype = 0.5
+  )
+  get_tibble_defaults_helper(x, sp,required_aes = c("x", "y", "xend", "yend"))
+}
+
+# method(get_tibble_defaults, class_any) <- function(x) {
+#   if (length(x) == 1) return(get_tibble(x))
+#   style(
+#     alpha = 1,
+#     angle = 0,
+#     arrow_head = the$arrow_head,
+#     arrow_mid = ggarrow::arrow_fins_minimal(),
+#     arrow_fins = ggarrow::arrow_fins_minimal(),
+#     color = "black",
+#     family = "sans",
+#     fill = "black",
+#     fontface = "plain",
+#     hjust = .5,
+#     justify = 0,
+#     label.color = "black",
+#     label.margin = ggplot2::margin(),
+#     label.padding = ggplot2::margin(),
+#     label.r = unit(0.15, "lines"),
+#     label.size = .25,
+#     length = 4,
+#     length_head = NULL,
+#     length_fins = NULL,
+#     length_mid = NULL,
+#     lineend = "butt",
+#     lineheight = 1,
+#     linejoin = "round",
+#     linemitre = 10,
+#     linewidth = .25,
+#     linewidth_fins = .25,
+#     linewidth_head = .25,
+#     linetype = 1,
+#     mid_place = 0.5,
+#     resect = 0,
+#     resect_head = NULL,
+#     resect_fins = NULL
+#
+#   )
+#
+#   get_tibble_defaults_helper(x, sp)
+# }

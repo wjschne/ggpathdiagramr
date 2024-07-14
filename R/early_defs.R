@@ -1,11 +1,13 @@
 # classes ----
-ggplot_class <- new_S3_class("ggplot")
-unit_class <- new_S3_class("unit")
+class_ggplot <- new_S3_class("ggplot")
+class_unit <- new_S3_class("unit")
+class_margin <- new_S3_class("margin")
 xy <- new_class("xy", abstract = TRUE)
+shape_list <- new_class("shape_list", parent = class_list)
 
 # generics ----
 #' Addition
-#' 
+#'
 #' @param e1 object
 #' @param e2 object
 #' @export
@@ -25,11 +27,39 @@ method(`+`, list(class_character, class_numeric)) <- function(e1,e2) {
   paste0(e1,e2)
 }
 
+# generics ----
+#' Get object data with styles in a tibble
+#'
+#' @param x object
+#' @export
+get_tibble <- new_generic("get_tibble", "x")
+method(get_tibble, class_list) <- function(x) {
+  purrr::map_df(S7_data(x), get_tibble)
+}
+
+#' Get points for making points
+#'
+#' @param x object
+#' @keywords internal
+get_points <- new_generic("get_points", "x")
+
+
+
+
+#' Get object data in a tibble, filling in any missing styles with defaults
+#'
+#' @param x object
+#' @export
+#' @rdname get_tibble
+get_tibble_defaults <- new_generic("get_tibble_defaults", "x")
+method(get_tibble_defaults, class_any) <- function(x) {
+  get_tibble(x)
+  }
 
 # unions ----
-numeric_or_character <- new_union(class_numeric, class_character)
-numeric_or_unit <- new_union(class_numeric, unit_class)
-
+class_numeric_or_character <- new_union(class_numeric, class_character)
+class_numeric_or_unit <- new_union(class_numeric, class_unit)
+class_character_or_logical <- new_union(class_character, class_logical)
 
 
 # internal states ----
@@ -42,8 +72,63 @@ the <- new.env(parent = emptyenv())
 the$arrow_head <- arrowheadr::arrow_head_deltoid()
 
 
-# helpers
+# helpers ----
 
+#' @keywords internal
+allsameclass <- function(l, classname) {
+  allsame <- all(sapply(lapply(l, class),
+                        function(x)  classname %in% x))
+  if (!allsame) {
+    paste0("All items must be ", classname, ".")
+  }
+}
+
+#' @keywords internal
+aes_injection <- function(bare_mapping, identity_mapping, omit = NULL) {
+  identity_mapping <- setdiff(identity_mapping, c(bare_mapping, omit))
+  bare_mapping <- setdiff(bare_mapping, omit)
+  i_styles <- purrr::map(
+    rlang::syms(identity_mapping),
+    \(i) call("I", i))
+  names(i_styles) <- identity_mapping
+  b_styles <- rlang::syms(bare_mapping)
+  names(b_styles) <- bare_mapping
+
+  rlang::inject(ggplot2::aes(!!!b_styles, !!!i_styles))
+
+}
+
+
+
+#' @keywords internal
+get_tibble_defaults_helper <- function(x, default_style, required_aes = c("x", "y")) {
+  d <- get_tibble(x)
+  for (n in setdiff(colnames(d), required_aes)) {
+    d_prop <- prop(default_style, n)
+
+    d_prop <- ifelse(is.vector(d_prop), d_prop, c(d_prop))
+    d[is.na(pull(d, n)), n] <- d_prop
+  }
+  d
+}
+
+
+
+#' @keywords internal
+get_non_empty_props <- function(x) {
+  Filter(function(s) length(s) > 0 , props(x))
+}
+
+#' @keywords internal
+get_non_empty_list <- function(l) {
+Filter(\(x) length(x) > 0, l)
+}
+
+#' @keywords internal
+get_non_empty_tibble <- function(d) {
+  d <- Filter(\(x) length(x) > 0, d)
+  tibble::as_tibble(d)
+  }
 
 #' Probability rounding
 #'
@@ -109,3 +194,6 @@ round_probability <- function(p,
   dim(l) <- dim(p)
   l
 }
+
+
+

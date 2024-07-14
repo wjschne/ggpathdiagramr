@@ -72,6 +72,17 @@ circle <- new_class(
     style = class_missing,
     ...) {
     c_style <- style_polygon() + style + style_polygon(...)
+    if (length(n) == 0) n <- 360L
+
+    d <- tibble::tibble(center = c(center),
+                        radius = c(radius),
+                        n = c(n),
+                        style = c(c_style))
+    if (nrow(d) > 1) {
+      return(circle_list(purrr::pmap(d, circle)))
+    }
+
+
 
     new_object(centerpoint(center = center),
                radius = radius,
@@ -81,10 +92,48 @@ circle <- new_class(
 )
 
 
-method(`+`, list(ggplot_class, circle)) <- function(e1, e2) {
+method(`+`, list(class_ggplot, circle)) <- function(e1, e2) {
   e1 + as.geom(e2)
 }
 
+# Circle list ----
+circle_list <- new_class(
+  name = "circle_list",
+  parent = shape_list,
+  properties = list(
+    center = new_property(
+      point_list,
+      getter = function(self) {
+        point_list(sapply(self, \(x) x@center))
+      }
+    ),
+    radius = new_property(
+      class_numeric,
+      getter = function(self) {
+        sapply(self, \(x) x@radius)
+      }
+    ),
+    n = new_property(
+      class_numeric,
+      getter = function(self) {
+        sapply(self, \(x) x@n)
+      }
+    ),
+    style = new_property(
+      class_list,
+      getter = function(self) {
+        style_list(lapply(self, \(x) x@style))
+      }
+    )
+  ),
+  validator = function(self) {
+    allsameclass(self, "circle")
+  }
+)
+
+method(`+`, list(class_ggplot, circle_list)) <- function(e1, e2) {
+  e1 + as.geom(e2)
+}
 
 
 # Ellipse ----
@@ -333,7 +382,7 @@ method(`==`, list(rectangle, rectangle)) <- function(e1, e2) {
   e1@center == e2@center && e1@width == e2@width && e1@height == e2@height
 }
 
-method(`+`, list(ggplot_class, rectangle)) <- function(e1, e2) {
+method(`+`, list(class_ggplot, rectangle)) <- function(e1, e2) {
   e1 + as.geom(e2)
 }
 
@@ -438,6 +487,6 @@ arc <- new_class(
 
 )
 
-method(`+`, list(ggplot_class, arc)) <- function(e1, e2) {
+method(`+`, list(class_ggplot, arc)) <- function(e1, e2) {
   e1 + as.geom(e2)
 }

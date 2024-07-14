@@ -9,14 +9,7 @@ rotate2columnmatrix <- function(x, theta) {
   x_rotated
 }
 
-#' @keywords internal
-allsameclass <- function(l, classname) {
-    allsame <- all(sapply(lapply(l, class),
-                         function(x)  classname %in% x))
-    if (!allsame) {
-      "All items must be points."
-    }
-}
+
 
 #' @keywords internal
 cardinalpoint <- function(x) {
@@ -63,11 +56,17 @@ rounder <- function(x, digits = 2, add = FALSE) {
 
 
 
-
-
-
 #' @keywords internal
-geom_styles <- function(x, ...) {
-  p_style <- x + style(...)
-  Filter(function(s) length(s) > 0 , props(p_style))
+get_non_empty_props_list_fix <- function(x) {
+  list_properties <- Filter(function(s) length(s) > 1 , props(x))
+  list_properties <- purrr::map(list_properties, as.list)
+  singletons <- Filter(function(s) length(s) == 1 && !S7_inherits(s) , props(x))
+  s7singletons <- Filter(function(s) length(s) == 1 && S7_inherits(s) , props(x))
+
+  l <- c(singletons, purrr::map(s7singletons, list), list_properties)
+  # reorder to original
+  l <- l[prop_names(x)[prop_names(x) %in% names(l)]]
+  l$tibble <- NULL
+  l
 }
+

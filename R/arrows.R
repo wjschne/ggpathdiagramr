@@ -30,7 +30,7 @@ arrow_segment <- new_class(
 
 )
 
-method(`+`, list(ggplot_class, arrow_segment)) <- function(e1, e2) {
+method(`+`, list(class_ggplot, arrow_segment)) <- function(e1, e2) {
   e1 + as.geom(e2)
 }
 
@@ -82,6 +82,8 @@ arrow_segment_list <- new_class(
   }
 )
 
-method(`+`, list(ggplot_class, arrow_segment_list)) <- function(e1, e2) {
+arrow_segment_or_arrow_segment_list <- new_union(arrow_segment, arrow_segment_list)
+
+method(`+`, list(class_ggplot, arrow_segment_list)) <- function(e1, e2) {
   e1 + as.geom(e2)
 }

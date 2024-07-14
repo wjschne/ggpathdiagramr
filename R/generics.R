@@ -134,18 +134,31 @@ midpoint <- new_generic("midpoint", c("x", "y"), fun = function(x,y, position = 
 })
 method(midpoint, list(point, point)) <- function(x,y, position = .5, ...) {
   m <- x + ((y - x) * position)
-  m@style <- m@style + style(...)
+  addstyle <- style(...)
+  if (length(get_non_empty_props(addstyle))) {
+    if (S7_inherits(m, point_list)) {
+      purrr::walk(m, \(p) {
+        p@style <- p@style + addstyle
+      })
+
+    } else {
+      m@style <- m@style + addstyle
+    }
+  }
   m
-  
 }
 method(midpoint, list(segment, class_missing)) <- function(x,y, position = .5, ...) {
+  x@p1@style <- x@p1@style + x@style
+  x@p2@style <- x@p2@style + x@style
+  midpoint(x@p1, x@p2, position = position, ...)
+}
+
+method(midpoint, list(arrow_segment, class_missing)) <- function(x,y, position = .5, ...) {
   midpoint(x@p1, x@p2, position = position, ...)
 }
 
 method(midpoint, list(arc, class_missing)) <- function(x,y, position = .5, ...) {
   m <- x@start@turn + (x@theta@turn * position)
-  
-
   x@center + polar(theta = turn(m), r = x@radius, style = style_point() + x@style + style(...))
 }
 
@@ -402,7 +415,7 @@ method(intersection, list(rectangle, point)) <- function(x, y) {
   intersection(y, x)
 }
 
-# points(x = intersect_line_segment@x, y = intersect_line_segment@y)
+
 method(intersection, list(segment, ellipse)) <- function(x, y, sep = .01) {
   p <- seq(0,1,sep)
   sp <- point_list(lapply(p, \(m) midpoint(x,position = m)))
@@ -417,14 +430,13 @@ method(intersection, list(segment, ellipse)) <- function(x, y, sep = .01) {
     for (ii in d_on$p) {
       pp <- c(pp, midpoint(x, position = ii))
     }
-    # print(d_change)
+
     for (ii in d_change$p) {
       s <- segment(midpoint(x, position = ii), midpoint(x, position = ii + sep))
-      # print(distance(s))
+
       if (distance(s) < (.1 ^ 15)) {
         pp <- c(pp, s@p1)
       } else {
-        # print(s)
         pp <- c(pp, intersection(s, y, sep = .5))
       }
     }
@@ -447,7 +459,7 @@ method(intersection, list(line, ellipse)) <- function(x, y) {
   ymax <- max(y@xy[,2])
   ymin <- min(y@xy[,2])
   if (is.infinite(x@slope)) {
-    s <- segment(point(x@x_intercept,ymin), point(x@x_intercept,ymax))
+    s <- segment(point(x@xintercept,ymin), point(x@xintercept,ymax))
   } else {
     s1 <- segment(anchor(x, xmin),
                   anchor(x, xmax))
@@ -820,14 +832,14 @@ str_properties <- function(
   cat(S7:::obj_desc(object))
   if (length(omit) > 0 & additional & nest.lev < 1) {
     additional_text <- paste0(" Omitted props: ", paste(p_names[p_names %in% omit], collapse = ", "))
-    cat(additional_text)    
+    cat(additional_text)
   }
   cat("\n")
-  
+
   str_nest(object = props(object)[!(p_names %in% omit)],
            prefix = "@",
            nest.lev = nest.lev)
-  
+
 
 }
 
@@ -857,7 +869,7 @@ method(str, label_or_label_list) <- function(
     object,
     nest.lev = 0,
     additional = FALSE,
-    omit = c("xy", "style", ".data")) {
+    omit = c("xy", "style")) {
   str_properties(object,
                      omit = omit,
                      nest.lev = nest.lev)
@@ -874,7 +886,7 @@ method(str, line_or_line_list) <- function(
              "b",
              "c",
              "angle",
-             "x_intercept")) {
+             "xintercept")) {
   str_properties(object,
                      omit = omit,
                      nest.lev = nest.lev)
@@ -896,7 +908,7 @@ method(str, rectangle) <- function(
       "b",
       "c",
       "angle",
-      "x_intercept")) {
+      "xintercept")) {
   str_properties(
     object,
     omit = omit,
@@ -912,6 +924,10 @@ method(str, angle_or_angle_list) <- function(object,
   str_properties(object,
                      omit = omit,
                      nest.lev = nest.lev)
+}
+
+method(str, class_any) <- function(object) {
+  S7:::str.S7_base_class(object)
 }
 
 
@@ -941,148 +957,43 @@ method(print, label) <- function(x, ...) {
   invisible(x)
 }
 
-label(point(), "3")
-point()
-
-
-# as.geom ----
-#' Convert shapes to ggplot2 geoms
-#'
-#' @param x a shape
-#' @param ... <[`dynamic-dots`][rlang::dyn-dots]> Pass arguments to ggplot2::geom_point
-#' @rdname as.geom
-#' @export
-as.geom <- new_generic("as.geom", c("x"))
-method(as.geom, point_or_point_list) <- function(x, ...) {
-
-  the_style <- geom_styles(x = style_point(shape = 16) + x@style, ...)
-
-  rlang::inject(
-    ggplot2::geom_point(data = as.data.frame(x@xy),
-                        ggplot2::aes(x = x, y = y),
-    !!!the_style))
+method(print, label_list) <- function(x, ...) {
+  str(x, ...)
+  invisible(x)
 }
 
-method(as.geom, line) <- function(x, ...) {
+method(str, style_or_style_list) <- function(object,
+  nest.lev = 0,
+  additional = FALSE,
+  omit = NULL) {
 
-  the_style <- geom_styles(x = x@style, ...)
+  omit_names <- names(props(object))
+  omit <- omit %||% Filter(\(o_name) {length(prop(object, name = o_name)) == 0}, omit_names)
 
-  if (x@b == 0) {
-    g <- rlang::inject(ggplot2::geom_vline(xintercept = x@x_intercept, !!!the_style))
-  } else if (x@a == 0) {
-    g <- rlang::inject(ggplot2::geom_hline(yintercept = x@intercept, !!!the_style))
-  } else {
-    g <- rlang::inject(ggplot2::geom_abline(slope = x@slope, intercept = x@intercept, !!!the_style))
-  }
-  g
-}
-method(as.geom, segment) <- function(x, ...) {
-  the_style <- geom_styles(x = x@style, ...)
-  rlang::inject(ggplot2::geom_line(data = as.data.frame(x@xy), aes(x = x, y = y), !!!the_style))
+
+str_properties(object,
+omit = omit,
+nest.lev = nest.lev, additional = FALSE)
+
 }
 
-method(as.geom, arrow_segment) <- function(x, ...) {
-  the_style <- geom_styles(x = x@style, ...)
-  rlang::inject(ggarrow::geom_arrow(data = as.data.frame(x@xy), aes(x = x, y = y), !!!the_style))
+method(print, style_base) <- function(x, ...) {
+  str(x, ...)
+  invisible(x)
 }
 
-method(as.geom, arrow_segment_list) <- function(x, ...) {
-  purrr::map(x, \(i) {
-    as.geom(i, ...)
-  })
+method(print, style_list) <- function(x, ...) {
+  str(x, ...)
+  invisible(x)
 }
 
-method(as.geom, segment_list) <- function(x, ...) {
-  the_style <- geom_styles(x = x@style, ...)
 
-
-  d_p1 <- as.data.frame(x@p1@xy)
-  colnames(d_p1) <- c("p1_x", "p1_y")
-  d_p2 <- as.data.frame(x@p2@xy)
-  colnames(d_p1) <- c("p2_x", "p2_y")
-  d <- cbind(d_p1, d_p2)
-  rlang::inject(ggplot2::geom_segment(
-    data = d,
-    aes(
-      x = p1_x,
-      y = p1_y,
-      xend = p2_x,
-      yend = p2_y
-    ),
-    !!!the_style
-  ))
+method(print, angle) <- function(x, ...) {
+  cat(as.character(x), "\n")
+  invisible(x)
 }
 
-method(as.geom, circle) <- function(x, ...) {
-  the_style <- geom_styles(x = x@style, ...)
-  rlang::inject(ggplot2::geom_polygon(data = as.data.frame(x@xy), aes(x = x, y = y), !!!the_style))
-}
 
-method(as.geom, ellipse) <- function(x, ...) {
-  the_style <- geom_styles(x = x@style, ...)
-  rlang::inject(ggplot2::geom_polygon(data = as.data.frame(x@xy), aes(x = x, y = y), !!!the_style))
-}
-
-method(as.geom, rectangle) <- function(x, ...) {
-
-  the_style <- geom_styles(x = x@style, ...)
-
-  d <- data.frame(x = x@center@x, y = x@center@y, width = x@width, height = x@height)
-
-  rlang::inject(ggplot2::geom_tile(data = d, aes(x = x, y = y, width = width, height = height), !!!the_style))
-}
-
-method(as.geom, arc) <- function(x, ...) {
-
-  the_style <- geom_styles(x = x@style, ...)
-
-  rlang::inject(ggarrow::geom_arrow(data = as.data.frame(x@xy), aes(x = x, y = y), !!!the_style))
-}
-
-method(as.geom, label) <- function(
-    x,
-    ...,
-    geom = c("richtext", "text", "label", "marquee"),
-    label.margin = ggplot2::margin(t = 1,
-                                   r = 1,
-                                   b = 1,
-                                   l = 1,
-                                   unit = "pt"),
-    label.padding = ggplot2::margin(t = 0,
-                                   r = 0,
-                                   b = 0,
-                                   l = 0,
-                                   unit = "pt"),
-    label.color = NA,
-    fill = NA) {
-
-  the_style <- geom_styles(x = x@style, ...)
-
-  if (length(the_style$size) > 0) the_style$size <- the_style$size / ggplot2::.pt
-
-  geom <- match.arg(geom)
-
-  if (geom == "text") {
-    geom2text <- ggplot2::geom_text
-  } else if (geom == "label") {
-    geom2text <- ggplot2::geom_label
-  } else if (geom == "richtext") {
-    geom2text <- purrr::partial(
-      ggtext::geom_richtext,
-      label.margin = label.margin,
-      fill = fill,
-      label.color = NA)
-  } else if (geom == "richtext") {
-    geom2text <- marquee::geom_marquee
-  }
-  rlang::inject(geom2text(
-    data = data.frame(x = x@p@x,
-                      y = x@p@y,
-                      label = x@label),
-    aes(x = x, y = y, label = label),
-    inherit.aes = FALSE,
-    !!!the_style))
-}
 
 # as.matrix ----
 
@@ -1212,37 +1123,61 @@ method(convert, list(style, class_list)) <- function(from, to) {
   l
 }
 
-# radidal_just ----
+# polar_just ----
 #' Create a style object with hjust and vjust specified via radial coordinates
 #'
 #' @param angle numeric (radians), angle, or point (which contains angle and distance (multiplier))
 #' @param multiplier make hjust and vjust larger or smaller
 #' @export
-radial_just <- new_generic(name = "radial_just", dispatch_args = c("style", "angle", "multiplier"))
-method(radial_just, list(style_or_style_label, class_angle_or_numeric, class_numeric)) <- function(style, angle, multiplier) {
-  hjust <- (((cos(angle + pi) + 1)/2) - 0.5) * multiplier + 0.5
-  vjust <- (((sin(angle + pi) + 1)/2) - 0.5) * multiplier + 0.5
+polar_just <- new_generic(name = "polar_just", dispatch_args = c("style", "angle", "multiplier"))
+method(polar_just, list(style_or_style_label, class_angle_or_numeric, class_numeric)) <- function(style, angle, multiplier) {
+
+  hjust <- polar2just(angle, multiplier, axis = "h")
+  vjust <- polar2just(angle, multiplier, axis = "v")
   style + style_label(hjust = hjust, vjust = vjust)
 }
-method(radial_just, list(style_or_style_label, class_angle_or_numeric, class_missing)) <- function(style, angle, multiplier) {
-  radial_just(style, angle, 1)
+method(polar_just, list(style_or_style_label, class_angle_or_numeric, class_missing)) <- function(style, angle, multiplier) {
+  polar_just(style, angle, 1)
 }
 
-method(radial_just, list(style_or_style_label, point, class_missing)) <- function(style, angle, multiplier) {
-  radial_just(style, angle@angle@radian, angle@r)
+method(polar_just, list(style_or_style_label, point, class_missing)) <- function(style, angle, multiplier) {
+  polar_just(style, angle@angle@radian, angle@r)
 }
 
-method(radial_just, list(class_missing, class_angle_or_numeric, class_numeric)) <- function(style, angle, multiplier) {
-  radial_just(style_label(), angle, multiplier)
+method(polar_just, list(class_missing, class_angle_or_numeric, class_numeric)) <- function(style, angle, multiplier) {
+  polar_just(style_label(), angle, multiplier)
 }
 
 
-method(radial_just, list(class_missing, class_angle_or_numeric, class_missing)) <- function(style, angle, multiplier) {
-  radial_just(style_label(), angle)
+method(polar_just, list(class_missing, class_angle_or_numeric, class_missing)) <- function(style, angle, multiplier) {
+  polar_just(style_label(), angle)
 }
 
-method(radial_just, list(class_missing, point, class_missing)) <- function(style, angle, multiplier) {
-  radial_just(style_label(), angle@angle@radian, angle@r)
+method(polar_just, list(class_missing, point, class_missing)) <- function(style, angle, multiplier) {
+  polar_just(style_label(), angle@angle@radian, angle@r)
 }
+
+# get points ----
+
+method(get_points, segment) <- function(x) {
+  p1@style <- p1@style + x@style
+  p2@style <- p2@style + x@style
+  point_list(c(x@p1, x@p2))
+}
+
+method(get_points, label_or_label_list) <- function(x) {
+  x@p
+}
+
+method(get_points, point_or_point_list) <- function(x) {
+  x
+}
+
+
+method(get_points, class_list) <- function(x) {
+  allsameclass(x, "point")
+  point_list(x)
+}
+
 
 

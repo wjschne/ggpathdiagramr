@@ -18,13 +18,13 @@ angle(
 
 angle_list(.data = class_missing)
 
-degree(degree)
+degree(degree = class_missing)
 
-radian(radian)
+radian(radian = class_missing)
 
-turn(turn)
+turn(turn = class_missing)
 
-gradian(gradian)
+gradian(gradian = class_missing)
 }
 \arguments{
 \item{radian}{radians}
@@ -41,7 +41,8 @@ gradian(gradian)
 Creates an angle in the metric of radians, degrees, turns, and gradians.
 }
 \details{
-Angles are never negative and always less than a full turn (360 degrees). Thus, \code{angle(degree = -10)} returns an angle of 350, and \code{angle(degree = 360)} returns an angle of 0.
+Angles turns can be any real number, but degrees are displayed as values between -360 and +360,
+radians are between -2pi and +2pi, and gradians are between -400 and +400.
 }
 \examples{
 # Four Different ways to make a right angle

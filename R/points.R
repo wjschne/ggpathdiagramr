@@ -1,3 +1,59 @@
+
+# get pointxy----
+#' Get x and y values for making points
+#'
+#' @param x object
+#' @param y numeric
+#' @param theta angle or numeric
+#' @param r numeric
+#' @keywords internal
+make_point <- new_generic("make_point", c("x", "y", "theta", "r"))
+method(generic = make_point, list(class_numeric, class_numeric, class_missing, class_missing)) <- function(x, y, theta, r) {
+         list(x = x, y = y)
+       }
+
+method(make_point,list(x = class_missing,y = class_missing,theta = angle_or_angle_list, r = class_numeric)) <- function(x, y, theta, r) {
+         list(x = r * cos(theta),
+              y = r * sin(theta))
+       }
+
+method(make_point,list(x = class_missing,y = class_missing,theta = class_numeric,r = class_numeric)) <- function(x, y, theta, r) {
+         make_point(r = r, theta = radian(theta))
+       }
+
+method(make_point,list(x = class_missing,y = class_missing,theta = class_missing,r = class_missing)) <- function(x, y, theta, r) {
+         list(x = 0, y = 0)
+       }
+
+
+method(make_point,list(x = class_numeric,y = class_missing,theta = class_missing,r = class_missing)) <- function(x, y, theta, r) {
+         if ("matrix" %in% class(x)) {
+           if (ncol(x) == 2) {
+             return(list(x = y <- x[,2, drop = TRUE],
+                         y = x[,1, drop = TRUE]))
+
+           } else {
+             stop(paste("A point list can be created with a 2-column matrix, but this matrix has", ncol(x), "columns."))
+           }
+         }
+         list(x = x,
+              y = 0)
+       }
+
+method(make_point,list(x = class_missing,y = class_numeric,theta = class_missing,r = class_missing)) <- function(x, y, theta, r) {
+         list(x = 0,
+              y = y)
+}
+
+method(make_point,list(x = class_missing,y = class_missing, theta = angle_or_angle_list,r = class_missing)) <- function(x, y, theta, r) {
+  make_point(r = 1, theta = radian(theta))
+}
+
+method(make_point,list(x = class_missing,y = class_missing, theta = class_missing,r = class_numeric)) <- function(x, y, theta, r) {
+  make_point(r = r, theta = radian(0))
+}
+
+
 # Point----
 
 #' point class
@@ -17,7 +73,7 @@ point <- new_class(
     y = new_property(class = class_numeric, default = 0),
     theta = new_property(
       getter = function(self)
-        angle(radian = atan2(self@y, self@x))
+        radian(radian = atan2(self@y, self@x))
     ),
     r = new_property(
       getter = function(self)
@@ -32,7 +88,7 @@ point <- new_class(
           dimnames = list(NULL, c("x", "y"))
         )
     ),
-    style = new_property(class = style_or_style_point, default = style_point(shape = 16))
+    style = new_property(class = style_or_style_point, default = style(shape = 16))
   ),
   validator = function(self) {
     if (length(self@x) > 1) {
@@ -43,19 +99,30 @@ point <- new_class(
     }
 
   },
+  # constructor = make_point
   constructor = function(x = class_missing,
                          y = class_missing,
                          theta = class_missing,
                          r = class_missing,
-                         style = class_missing,
+                         alpha = class_missing,
+                         color = class_missing,
+                         fill = class_missing,
+                         shape = class_missing,
+                         size = class_missing,
+                         stroke = class_missing,
+                         style = point@properties$style$default,
                          ...) {
 
-    # We want to be able to pass arguments from a generic style class,
-    # but we want to end up with a style_point object. So we start with an
-    # empty style_point(), pass any filled in arguments from the style slot
-    # (which can either be a general style or a style_point class), and then
-    # pass any specifications from ...
-    p_style <- style_point() + style + style_point(...)
+
+    p_style <- style(
+      alpha = alpha, 
+      color = color, 
+      fill = fill, 
+      shape = shape, 
+      size = size, 
+      stroke = stroke) + 
+      style + 
+      style(...)
 
     # slot x might be a 2-column matrix
     if ("matrix" %in% class(x)) {
@@ -67,37 +134,34 @@ point <- new_class(
       }
     }
 
-    if (length(x) == 0 &&
-        length(y) == 0 &&
-        length(theta) > 0 &&
-        length(r) > 0) {
-      if (is.numeric(theta)) theta <- angle(radian = theta)
-      x = r * cos(theta)
-      y = r * sin(theta)
-    }
-    if (length(x) == 0) {
-      x <- 0L
-    }
+    # if (length(x) == 0 &&
+    #     length(y) == 0 &&
+    #     length(theta) > 0 &&
+    #     length(r) > 0) {
+    #   if (is.numeric(theta)) theta <- angle(radian = theta)
+    #   x = r * cos(theta)
+    #   y = r * sin(theta)
+    # }
+    # if (length(x) == 0) {
+    #   x <- 0L
+    # }
+    #
+    # if (length(y) == 0) {
+    #   y <- 0L
+    # }
 
-    if (length(y) == 0) {
-      y <- 0L
-    }
+    non_empty_list <- get_non_empty_list(list(x = x, y = y, theta = theta, r = r))
 
-    d <- tibble::tibble(x = x, y = y, style = c(p_style))
+
+    l <- rlang::inject(make_point(!!!non_empty_list))
+
+
+    d <- tibble::tibble(x = l$x, y = l$y, style = c(p_style))
     if (nrow(d) > 1) {
       return(point_list(purrr::pmap(d, point)))
     }
 
-    # if (any(manyxy, manyx, manyy)) {
-    #   d <- cbind(x, y)
-    #   return(point_list(apply(d, 1, \(r) {
-    #     names(r) <- NULL
-    #     point(x = r[1], y = r[2], style = p_style)
-    #   })))
-    # }
-
-
-    new_object(S7_object(), x = x, y = y, style = p_style)
+    new_object(S7_object(), x = l$x, y = l$y, style = p_style)
   }
 )
 
@@ -122,32 +186,33 @@ method(`/`, list(point, point)) <- function(e1, e2) {
   e1
 }
 method(`+`, list(class_numeric, point)) <- function(e1, e2) {
-  e2@x <- e1 + e2@x
-  e2@y <- e1 + e2@y
-  e2
+  # The point function is needed because e1 might have length > 1.
+  point(x = e1 + e2@x, 
+        y = e1 + e2@y, 
+        style = e2@style)
 }
 method(`-`, list(class_numeric, point)) <- function(e1, e2) {
-  e2@x <- e1 - e2@x
-  e2@y <- e1 - e2@y
-  e2
+  point(x = e1 - e2@x, 
+    y = e1 - e2@y, 
+    style = e2@style)
 }
 method(`*`, list(class_numeric, point)) <- function(e1, e2) {
-  e2@x <- e1 * e2@x
-  e2@y <- e1 * e2@y
-  e2
+  point(x = e1 * e2@x, 
+    y = e1 * e2@y, 
+    style = e2@style)
 }
 method(`/`, list(class_numeric, point)) <- function(e1, e2) {
-  e2@x <- e1 / e2@x
-  e2@y <- e1 / e2@y
-  e2
+  point(x = e1 / e2@x, 
+    y = e1 / e2@y, 
+    style = e2@style)
 }
 method(`+`, list(point, class_numeric)) <- function(e1, e2) {
   e2 + e1
 }
 method(`-`, list(point, class_numeric)) <- function(e1, e2) {
-  e1@x <- e1@x - e2
-  e1@y <- e1@y - e2
-  e1
+  point(x = e1@x - e2, 
+    y = e1@y - e2, 
+    style = e1@style)  
 }
 method(`*`, list(point, class_numeric)) <- function(e1, e2) {
   e2 * e1
@@ -166,9 +231,14 @@ method(`==`, list(point, point)) <- function(e1, e2) {
   e1@x == e2@x && e1@y == e2@y
 }
 
-method(`+`, list(ggplot_class, point)) <- function(e1, e2) {
+method(`+`, list(class_ggplot, point)) <- function(e1, e2) {
   e1 + as.geom(e2)
 }
+
+method(polar2just, point) <- function(x, multiplier = 1.2, axis = c("h", "v")) {
+  polar2just(x@theta@radian, multiplier, axis)
+}
+
 
 # Polar class ----
 #' @rdname point
@@ -197,14 +267,14 @@ polar <- new_class(
 #' @rdname point
 point_list <- new_class(
   name = "point_list",
-  parent = class_list,
+  parent = shape_list,
   properties = list(
     x = new_property(
       class_numeric,
       getter = function(self) {
         sapply(self, \(x) x@x)
       }
-    ),
+      ),
     y = new_property(
       class_numeric,
       getter = function(self) {
@@ -255,11 +325,30 @@ method(`-`, list(point_list, point)) <- function(e1, e2) {
   e2 - e1
 }
 
-method(`+`, list(ggplot_class, point_list)) <- function(e1, e2) {
+method(`+`, list(class_ggplot, point_list)) <- function(e1, e2) {
   e1 + as.geom(e2)
 }
 
 point_or_point_list <- new_union(point, point_list)
 
 
+method(get_tibble, point) <- function(x) {
+  xs <- c(list(x = x@x,
+             y = x@y),
+          get_non_empty_props(x@style))
+
+  rlang::inject(tibble::tibble(!!!xs))
+}
+
+method(get_tibble_defaults, point_list) <- function(x) {
+  sp <- style_point(
+    alpha = 1,
+    color = "black",
+    fill = "black",
+    shape = 16,
+    size = 1.5,
+    stroke = 0.5
+  )
+  get_tibble_defaults_helper(x, sp, required_aes = c("x", "y"))
+}
 

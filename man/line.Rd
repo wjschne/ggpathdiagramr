@@ -7,7 +7,7 @@
 line(
   slope = class_missing,
   intercept = class_missing,
-  x_intercept = class_missing,
+  xintercept = class_missing,
   a = class_missing,
   b = class_missing,
   c = class_missing,
@@ -20,7 +20,7 @@ line(
 
 \item{intercept}{value of y when x is 0}
 
-\item{x_intercept}{value of x when y is 0}
+\item{xintercept}{value of x when y is 0}
 
 \item{a}{constant in general form: a * x + b * y + c = 0}
 
