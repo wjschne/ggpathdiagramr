@@ -12,6 +12,12 @@ point(
   y = class_missing,
   theta = class_missing,
   r = class_missing,
+  alpha = class_missing,
+  color = class_missing,
+  fill = class_missing,
+  shape = class_missing,
+  size = class_missing,
+  stroke = class_missing,
   style = point@properties$style$default,
   ...
 )

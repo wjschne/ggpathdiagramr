@@ -13,6 +13,7 @@
 #' @export
 line <- new_class(
   "line",
+  parent = shape,
   properties = list(
     # ax + by + c = 0
     a = new_property(class = class_numeric, default = 0),
@@ -139,10 +140,6 @@ line_list <- new_class(
 )
 line_or_line_list <- new_union(line, line_list)
 
-method(`+`, list(class_ggplot, line_or_line_list)) <- function(e1, e2) {
-  e1 + as.geom(e2)
-}
-
 method(get_tibble, line) <- function(x) {
   xs <- c(list(slope = x@slope,
                intercept = x@intercept,
@@ -191,6 +188,7 @@ method(get_tibble_defaults, line_list) <- function(x) {
 #' @export
 segment <- new_class(
   name = "segment",
+  parent = xy,
   properties = list(
     p1 = new_property(class = point, default = point(x = 0, y = 0)),
     p2 = new_property(class = point, default = point(x = 0, y = 0)),
@@ -256,9 +254,7 @@ method(`-`, list(point, segment)) <- function(e1, e2) {
   segment(e1 - e2@p1, e1 - e2@p2)
 }
 
-method(`+`, list(class_ggplot, segment)) <- function(e1, e2) {
-  e1 + as.geom(e2)
-}
+
 
 # Segment list----
 #' segment_list
@@ -310,9 +306,6 @@ segment_list <- new_class(
 segment_or_segment_list <- new_union(segment, segment_list)
 
 
-method(`+`, list(class_ggplot, segment_list)) <- function(e1, e2) {
-  e1 + as.geom(e2)
-}
 
 
 method(get_tibble, segment) <- function(x) {
@@ -328,12 +321,12 @@ method(get_tibble, segment) <- function(x) {
 
 method(get_tibble_defaults, segment_list) <- function(x) {
   sp <- style_line(
-    alpha = 1,
-    color = "black",
-    linend = "black",
-    linejoin = 16,
-    linewidth = 1.5,
-    linetype = 0.5
+    alpha = replace_na(as.double(ggplot2::GeomSegment$default_aes$alpha), 1),
+    color = replace_na(ggplot2::GeomSegment$default_aes$colour, "black"),
+    lineend = "butt",
+    linejoin = "round",
+    linewidth = replace_na(ggplot2::GeomSegment$default_aes$linewidth, 0.5),
+    linetype = replace_na(ggplot2::GeomSegment$default_aes$linetype, 1)
   )
   get_tibble_defaults_helper(x, sp,required_aes = c("x", "y", "xend", "yend"))
 }

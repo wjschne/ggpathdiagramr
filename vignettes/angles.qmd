@@ -17,13 +17,27 @@ vignette: >
 library(ggpathdiagramr)
 library(ggplot2)
 library(dplyr)
-knitr::opts_chunk$set(dev = "svg", fig.height = 8, fig.width = 8)
+library(ggtext)
+library(ggarrow)
+knitr::opts_chunk$set(dev = "svglite", fig.height = 8, fig.width = 8)
+myfont <- "Roboto Condensed"
+gdtools::register_gfont(family = myfont)
+gdtools::addGFontHtmlDependency(family = myfont)
+update_geom_defaults("richtext", 
+                     list(family = 
+                            "Roboto Condensed", size = .8 * 16 / ggplot2::.pt))
+
+update_geom_defaults("arrow_segment", list(length_head = 8))
 ```
 
 ```{r setup}
 library(ggpathdiagramr)
 library(ggplot2)
 library(dplyr)
+library(ggtext)
+library(ggarrow)
+myfont <- "Roboto Condensed"
+
 ```
 
 Angles have different kinds of units associated with them: degrees, radians, gradians, and turns. The `angle` class can take turns (i.e., 1 turn = one full rotation a circle), degrees (1 turn = 360 degrees), radians (1 turn = $2\pi$ = $\tau$), or gradians (1 turn = 400 gradians, gons, or grads).
@@ -50,10 +64,17 @@ $1$ | $\tau~\text{or}~2\pi$ | $360^\circ$ | $400$ |
 theta <- degree(seq(0,330, 30))
 p <- polar(theta, r = 1)
 
-r <- seq(0.4, 1, length.out = 4)
-my_shades <- tinter::tinter("royalblue", 
+r <- seq(1, .4, length.out = 4)
+my_shades <- (tinter::tinter("royalblue", 
                             steps = 7, 
-                            direction = "tints")[1:4]
+                            direction = "tints")[1:4])
+my_circles <- circle(
+    center = point(),
+    radius = r,
+    fill = my_shades,
+    color = NA,
+    linewidth = .25
+  )
 
 
 ggplot() +
@@ -61,31 +82,34 @@ ggplot() +
   theme_void() +
   circle(
     center = point(),
-    radius = rev(seq(0.4, 1, length.out = 4)),
+    radius = r,
     fill = my_shades,
     color = NA,
     linewidth = .25
   ) +
   segment(point(), p, linewidth = .25) +
-  purrr::map2(r, 
-              list(degree(theta), gradian(theta), radian(theta), turn(theta)), 
-              \(radius, ang) {
-                as.geom(label(polar(theta = ang, r = radius - .1), 
-                              label = ang, 
-                              fill = my_shades[5 - match(radius, r)],
-                              ),
-                        family = "Roboto Condensed")
-                })  +
+  label(polar(theta, r[1] - .1), label = turn(theta), fill = my_shades[1]) +
+  label(polar(theta, r[2] - .1), label = radian(theta), fill = my_shades[2]) +
+  label(polar(theta, r[3] - .1), label = gradian(theta), fill = my_shades[3]) +
+  label(polar(theta, r[4] - .1), label = turn(theta), fill = my_shades[4]) +
+  # Could do it this way, too:
+  # purrr::pmap(.l = list(r, 
+  #                  list(turn, radian, gradian, degree), 
+  #                  my_shades), 
+  #             .f = \(radius, .a, shade) {
+  #               as.geom(label(polar(theta, r = radius - .1),
+  #                             label = .a(theta),
+  #                             fill = shade))
+  # }) +
   label(
     p = polar(degree(90), r = r),
     label = c("Degrees", "Gradians", "Radians", "Turns"),
     vjust = 1.13,
     style = style_label(
-      fill = rev(my_shades), 
-      family = "Roboto Condensed",
+      fill = my_shades, 
+      family = myfont,
       fontface = "bold") 
   )
-
 
 ```
 
@@ -163,7 +187,8 @@ make_angles <- function(a = c(100, 330),
                         multiplier = c(1,1,1.1)) {
   style_A <- style(color = "firebrick", 
                    arrow_head = arrowheadr::arrow_head_deltoid(), 
-                   linewidth = .65,
+                   linewidth = .85,
+                   length_head = 10,
                    resect_head = .5)
   style_B <- style_A + style(color = "royalblue")
 v1 <- degree(a[1])

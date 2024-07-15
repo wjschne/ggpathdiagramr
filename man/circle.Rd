@@ -32,10 +32,4 @@ circle class
 # specify center point and radius
 p <- point(0,0)
 circle(p, radius = 6)
-
-# make a regular polygon
-xy <- circle(p, n = 6)@xy
-plot(xy, asp = 1, type = "n")
-polygon(xy)
-
 }

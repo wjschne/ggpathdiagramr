@@ -70,3 +70,63 @@ get_non_empty_props_list_fix <- function(x) {
   l
 }
 
+#' @keywords internal
+make_geom_helper <- function(
+  x,
+  .geom_x,
+  user_overrides,
+  not_mappable = "",
+  required_aes = "",
+  mapable_bare = "",
+  mapable_identity = "",
+  omit_names = "") {
+
+  # get data from shape, filling in any defaults
+  d <- get_tibble_defaults(x)
+
+  # add group so that I() function will not disturb drawing order
+  if (!("group" %in% colnames(d))) {
+    d$group <- seq(nrow(d))
+  }
+  # 1 row per unique combination of not mappable arguments
+  d_nested <- tidyr::nest(d, .by = any_of(not_mappable))
+
+  # all colnames  but data
+  not_mapped_names <- colnames(d_nested)[colnames(d_nested) != "data"]
+
+  d_all <- tidyr::nest(d_nested, .by = data, .key = "unmapable")
+
+
+  # make geom for each row in d_nested
+  purrr::pmap(d_all, \(data, unmapable) {
+
+
+    # make list of not mapped arguments
+    not_mapped <- as.list(unmapable)
+
+
+    # get mapable names
+    data_names <- colnames(data)
+
+    # get names for bare mapping
+    bare_mapping <- intersect(unique(required_aes, mapable_bare), data_names)
+    # omitted arguments
+    omit_mapping <- unique(c(omit_names, names(user_overrides), not_mapped_names))
+    # gename names for identity mapping
+    identity_mapping <- setdiff(data_names, unique(c(bare_mapping, omit)))
+
+    myaes <- aes_injection(
+      bare_mapping = bare_mapping,
+      identity_mapping = identity_mapping,
+      omit_mapping = omit_mapping
+  )
+
+  rlang::inject(.geom_x(
+    mapping = myaes,
+    data = data,
+    inherit.aes = FALSE,
+    !!!user_overrides,
+    !!!not_mapped
+  ))
+  })
+}

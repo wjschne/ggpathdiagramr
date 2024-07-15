@@ -6,16 +6,28 @@
 #' @rdname as.geom
 #' @export
 as.geom <- new_generic("as.geom", c("x"))
+# method(as.geom, point_or_point_list) <- function(x, ...) {
+#   the_style <- get_non_empty_props(style_point(...))
+#   d <- get_tibble_defaults(x)
+#   myaes <- aes_injection(c("x", "y"), colnames(d))
+#   rlang::inject(ggplot2::geom_point(
+#     mapping = myaes,
+#     data = d,
+#     inherit.aes = FALSE,
+#     !!!the_style
+#   ))
+# }
+
 method(as.geom, point_or_point_list) <- function(x, ...) {
-  the_style <- get_non_empty_props(style_point(...))
-  d <- get_tibble_defaults(x)
-  myaes <- aes_injection(c("x", "y"), colnames(d))
-  rlang::inject(ggplot2::geom_point(
-    mapping = myaes,
-    data = d,
-    inherit.aes = FALSE,
-    !!!the_style
-  ))
+  make_geom_helper(
+    x = x,
+    .geom_x = ggplot2::geom_point,
+    user_overrides = get_non_empty_props(style_point(...)),
+    mapable_bare = "",
+    not_mappable = c("n"),
+    required_aes = c("x", "y"),
+    omit_names = "group")
+
 }
 
 method(as.geom, line_or_line_list) <- function(x, ...) {
@@ -78,17 +90,22 @@ method(as.geom, arrow_segment_or_arrow_segment_list) <- function(x, ...) {
   ))
 }
 
-method(as.geom, circle) <- function(x, ...) {
-  the_style <- get_non_empty_props(x = style_polygon(fill = NA, color = "black") + x@style + style_polygon(...))
-  rlang::inject(ggforce::geom_circle(
-    data = tibble::tibble(x0 = x@center@x, y0 = x@center@y, r = x@radius),
-    mapping = aes(x0 = x0, y0 = y0, r = r),
-    inherit.aes = FALSE,
-    !!!the_style))
+method(as.geom, circle_or_circle_list) <- function(x, ...) {
+  make_geom_helper(
+    x = x,
+    .geom_x = ggforce::geom_circle,
+    user_overrides = get_non_empty_props(style_polygon(...)),
+    mapable_bare = "",
+    not_mappable = c("n"),
+    required_aes = c("x0", "y0", "r", "group"),
+    omit_names = c("linejoin", "rule"))
+
 }
 
+
+
 method(as.geom, ellipse) <- function(x, ...) {
-  the_style <- get_non_empty_props(x = style_polygon(fill = NA, color = "black") + x@style + style_polygon(...))
+  the_style <- get_non_empty_props(x = style_polygon(fill = NA_character_, color = "black") + x@style + style_polygon(...))
   rlang::inject(ggplot2::geom_polygon(data = as.data.frame(x@xy), aes(x = x, y = y), !!!the_style))
 }
 
@@ -130,7 +147,7 @@ method(as.geom, label_or_label_list) <- function(
                                     b = 1,
                                     l = 1,
                                     unit = "pt")),
-    label.color = NA
+    label.color = NA_character_
   )
 
   d <- get_tibble_defaults(x)

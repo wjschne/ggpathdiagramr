@@ -11,7 +11,7 @@ label <- new_class(
   name = "label",
   parent = xy,
   properties = list(
-    p = new_property(point, default = point(0, 0, style = style_point(shape = 16))),
+    p = new_property(point, default = point(0, 0, style = style_point())),
     label = new_property(class_angle_or_character, default = ""),
     xy = new_property(
       class_numeric,
@@ -124,7 +124,7 @@ point_or_label <- new_union(point, label)
 #' @rdname point
 label_list <- new_class(
   name = "label_list",
-  parent = class_list,
+  parent = shape_list,
   properties = list(
     p = new_property(
       point_list,
@@ -151,9 +151,7 @@ label_list <- new_class(
 )
 label_or_label_list <- new_union(label, label_list)
 
-method(`+`, list(class_ggplot, label_or_label_list)) <- function(e1, e2) {
-  e1 + as.geom(e2)
-}
+
 
 method(get_tibble, label) <- function(x) {
   xs <- c(list(x = x@p@x,

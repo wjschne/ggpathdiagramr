@@ -30,7 +30,7 @@ style_base <- new_class(
   abstract = TRUE,
   properties = list(
     alpha = class_numeric,
-    color = class_character_or_logical
+    color = class_character
   )
 )
 
@@ -66,19 +66,19 @@ style <- new_class(
     arrow_head = class_list,
     arrow_mid = class_list,
     family = class_character,
-    fill = class_character_or_logical,
+    fill = class_character,
     fontface = class_character,
     hjust = prop_hjust,
     justify = class_numeric,
-    label.color = class_character_or_logical,
+    label.color = class_character,
     label.padding = class_list,
     label.margin = class_list,
-    label.r = class_any,
-    label.size = class_any,
-    length = class_any,
-    length_head = class_any,
-    length_fins = class_any,
-    length_mid  = class_any,
+    label.r = class_numeric_or_unit,
+    label.size = class_numeric_or_unit,
+    length = class_numeric_or_unit,
+    length_head = class_numeric_or_unit,
+    length_fins = class_numeric_or_unit,
+    length_mid  = class_numeric_or_unit,
     lineend = class_numeric_or_character,
     lineheight = class_numeric,
     linejoin = class_character,
@@ -89,11 +89,11 @@ style <- new_class(
     nudge_x = class_numeric,
     nudge_y = class_numeric,
     polar_just = class_angle_or_numeric,
-    resect = class_any,
-    resect_fins = class_any,
-    resect_head = class_any,
+    resect = class_numeric_or_unit,
+    resect_fins = class_numeric_or_unit,
+    resect_head = class_numeric_or_unit,
     shape = class_numeric_or_character,
-    size = class_any,
+    size = class_numeric_or_unit,
     size.unit = new_property(
       class_character,
       validator = function(value) {
@@ -103,9 +103,9 @@ style <- new_class(
       }
     ),
     stroke = class_numeric,
-    stroke_color = class_character_or_logical,
+    stroke_color = class_character,
     stroke_width = class_character,
-    text.color = class_character_or_logical,
+    text.color = class_character,
     vjust = prop_vjust
   ),
   constructor = function(alpha = class_missing,
@@ -151,19 +151,27 @@ style <- new_class(
                          vjust = class_missing,
                          ...) {
     the_style <- rlang::list2(...)
-    color <- the_style$colour %||% color
-    label.color <- the_style$label.colour %||% label.color
-    text.color <- the_style$text.colour %||% text.color
-    stroke_color <- the_style$stroke_colour %||% stroke_color
+    color <- as.character(the_style$colour %||% color)
+    label.color <- as.character(the_style$label.colour %||% label.color)
+    text.color <- as.character(the_style$text.colour %||% text.color)
+    stroke_color <- as.character(the_style$stroke_colour %||% stroke_color)
+    fill <- as.character(fill)
+    if (is.logical(linetype)) linetype <- as.character(linetype)
 
 
     d <- list(
       alpha = c(alpha),
       angle = c(angle),
       polar_just = c(polar_just),
-      arrow_head = list(arrow_head),
-      arrow_fins = list(arrow_fins),
-      arrow_mid = list(arrow_mid),
+      arrow_fins = ifelse(length(arrow_fins) > 0 && !is.list(arrow_fins) && is.null(arrow_fins),
+                          list(arrow_fins),
+                          list()),
+      arrow_head = ifelse(length(arrow_head) > 0 && !is.list(arrow_head) && is.null(arrow_head),
+                          list(arrow_head),
+                          list()),
+      arrow_mid = ifelse(length(arrow_mid) > 0 && !is.list(arrow_mid) && is.null(arrow_mid),
+                         list(arrow_mid),
+                         list()),
       color = c(color),
       family = c(family),
       fill = c(fill),
@@ -242,10 +250,10 @@ style <- new_class(
     if (length(polar_just) == 1) {
       if (S7_inherits(polar_just, S7_class(angle(0))) || is.numeric(polar_just)) {
         polar_just <- polar(theta = radian(polar_just), r = 1.2)
-        
+
       }
       hjust <- polar2just(polar_just@theta, polar_just@r, axis = "h")
-      vjust <- polar2just(polar_just@theta, polar_just@r, axis = "v")      
+      vjust <- polar2just(polar_just@theta, polar_just@r, axis = "v")
       polar_just <- class_missing
     }
 
@@ -305,9 +313,9 @@ style_point <- new_class(
   name = "style_point",
   parent = style_base,
   properties = list(
-    fill = class_character_or_logical,
+    fill = class_character,
     shape = class_numeric_or_character,
-    size = class_any,
+    size = class_numeric_or_unit,
     stroke = class_numeric
   ),
   constructor = function(alpha = class_missing,
@@ -319,6 +327,8 @@ style_point <- new_class(
                          ...) {
     the_style <- rlang::list2(...)
     color <- the_style$colour %||% color
+    fill <- as.character(fill)
+
     d <- list(
       alpha = c(alpha),
       color = c(color),
@@ -366,7 +376,8 @@ style_line <- new_class(
                          linetype = class_missing,
                          ...) {
     the_style <- rlang::list2(...)
-    color <- the_style$colour %||% color
+    color <- as.character(the_style$colour %||% color)
+    if (is.logical(linetype)) linetype <- as.character(linetype)
 
     d <- list(
       alpha = c(alpha),
@@ -406,14 +417,14 @@ style_arrow <- new_class(
     arrow_head = class_list,
     arrow_mid = class_list,
     justify = class_numeric,
-    length_head = class_any,
-    length_fins = class_any,
-    length_mid  = class_any,
-    linewidth_fins = class_any,
-    linewidth_head = class_any,
-    resect = class_any,
-    resect_fins = class_any,
-    resect_head = class_any
+    length_head = class_numeric_or_unit,
+    length_fins = class_numeric_or_unit,
+    length_mid  = class_numeric_or_unit,
+    linewidth_fins = class_numeric_or_unit,
+    linewidth_head = class_numeric_or_unit,
+    resect = class_numeric_or_unit,
+    resect_fins = class_numeric_or_unit,
+    resect_head = class_numeric_or_unit
   ),
   constructor = function(alpha = class_missing,
                          arrow_fins = class_missing,
@@ -435,31 +446,34 @@ style_arrow <- new_class(
                          resect_head = class_missing,
                          ...) {
     the_style <- rlang::list2(...)
-    color <- the_style$colour %||% color
+    color <- as.character(the_style$colour %||% color)
+    if (is.logical(linetype)) linetype <- as.character(linetype)
+
+
 
 
     d <- list(
       alpha = alpha,
-      arrow_fins = ifelse(length(arrow_fins) > 0,
+      arrow_fins = ifelse(length(arrow_fins) > 0 && !is.list(arrow_fins) && is.null(arrow_fins),
                           list(arrow_fins),
                           list()),
-      arrow_head = ifelse(length(arrow_head) > 0,
+      arrow_head = ifelse(length(arrow_head) > 0 && !is.list(arrow_head) && is.null(arrow_head),
                           list(arrow_head),
                           list()),
-      arrow_mid = ifelse(length(arrow_mid) > 0,
+      arrow_mid = ifelse(length(arrow_mid) > 0 && !is.list(arrow_mid) && is.null(arrow_mid),
                          list(arrow_mid),
                          list()),
       color = c(color),
       justify = c(justify),
-      length_head = c(length_head),
-      length_fins = c(length_fins),
-      length_mid = c(length_mid),
+      length_head = length_head,
+      length_fins = length_fins,
+      length_mid = length_mid,
       lineend = c(lineend),
       linejoin = c(linejoin),
       linewidth = c(linewidth),
       linetype = c(linetype),
       linewidth_fins = c(linewidth_fins),
-      linewidth_head = c(linewidth_head),
+      linewidth_head = linewidth_head,
       resect = c(resect),
       resect_fins = c(resect_fins),
       resect_head = c(resect_head)
@@ -467,9 +481,12 @@ style_arrow <- new_class(
 
     d <- get_non_empty_tibble(d)
 
+    # print(d)
+
     if (nrow(d) > 1) {
       return(style_list(purrr::pmap(d, style_arrow)))
     }
+
 
     if (length(arrow_fins) > 0) {
       arrow_fins <- list(arrow_fins)
@@ -486,6 +503,9 @@ style_arrow <- new_class(
     } else {
       arrow_mid <- list()
     }
+    # linewidth_head <- ifelse(length(linewidth_head) == 0, numeric(0), linewidth_head)
+
+    # print(arrow_head)
 
     new_object(S7_object(),
                alpha = alpha,
@@ -502,6 +522,7 @@ style_arrow <- new_class(
                length_fins = length_fins,
                length_mid = length_mid,
                linewidth_fins = linewidth_fins,
+               linewidth_head = linewidth_fins,
                resect = resect,
                resect_fins = resect_fins,
                resect_head = resect_head)
@@ -516,7 +537,7 @@ style_polygon <- new_class(
   name = "style_polygon",
   parent = style_line,
   properties = list(
-    fill = class_character_or_logical,
+    fill = class_character,
     rule = class_numeric_or_character
   ),
   constructor = function(
@@ -530,7 +551,9 @@ style_polygon <- new_class(
     rule = class_missing,
     ...) {
     the_style <- rlang::list2(...)
-    color <- the_style$colour %||% color
+    color <- as.character(the_style$colour %||% color)
+    fill <- as.character(fill)
+    if (is.logical(linetype)) linetype <- as.character(linetype)
 
     d <- list(
       alpha = c(alpha),
@@ -570,20 +593,20 @@ style_label <- new_class(
   properties = list(
     angle = class_angle_or_numeric,
     family = class_character,
-    fill = class_character_or_logical,
+    fill = class_character,
     fontface = class_character,
     hjust = prop_hjust,
-    label.color = class_character_or_logical,
+    label.color = class_character,
     label.margin = class_list,
     label.padding = class_list,
-    label.r = class_any,
-    label.size = class_any,
+    label.r = class_numeric_or_unit,
+    label.size = class_numeric_or_unit,
     lineheight = class_numeric,
     nudge_x = class_numeric,
     nudge_y = class_numeric,
     polar_just = class_angle_or_numeric,
-    size = class_any,
-    text.color = class_character_or_logical,
+    size = class_numeric_or_unit,
+    text.color = class_character,
     vjust = prop_vjust
   ), constructor = function(
     alpha = class_missing,
@@ -608,9 +631,10 @@ style_label <- new_class(
     ...
     ) {
     the_style <- rlang::list2(...)
-    color <- the_style$colour %||% color
-    label.color <- the_style$label.colour %||% label.color
-    text.color <- the_style$text.colour %||% text.color
+    color <- as.character(the_style$colour %||% color)
+    label.color <- as.character(the_style$label.colour %||% label.color)
+    text.color <- as.character(the_style$text.colour %||% text.color)
+
 
     d <- list(
       alpha = c(alpha),
@@ -656,10 +680,10 @@ style_label <- new_class(
     if (length(polar_just) == 1) {
       if (S7_inherits(polar_just, S7_class(angle(0)) ) || is.numeric(polar_just)) {
         polar_just <- polar(theta = radian(polar_just), r = 1.2)
-        
+
       }
       hjust <- polar2just(polar_just@theta, polar_just@r, axis = "h")
-      vjust <- polar2just(polar_just@theta, polar_just@r, axis = "v")      
+      vjust <- polar2just(polar_just@theta, polar_just@r, axis = "v")
       polar_just <- class_missing
     }
 

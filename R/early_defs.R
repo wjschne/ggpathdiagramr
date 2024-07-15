@@ -1,9 +1,22 @@
 # classes ----
 class_ggplot <- new_S3_class("ggplot")
-class_unit <- new_S3_class("unit")
+class_unit <- new_S3_class(
+  "unit",
+  constructor = function(.data = numeric(), units = "mm") {
+  if ("unit" %in% class(.data)) {
+    return(.data)
+  } else {
+    ggplot2::unit(.data, units)
+  }
+
+  },
+  validator = function(self) {
+    if (!is.numeric(self)) stop("Underlying data for units must be numeric.")
+  })
 class_margin <- new_S3_class("margin")
-xy <- new_class("xy", abstract = TRUE)
+shape <- new_class("shape", abstract = TRUE)
 shape_list <- new_class("shape_list", parent = class_list)
+xy <- new_class("xy", parent = shape, abstract = TRUE)
 
 # generics ----
 #' Addition
@@ -12,6 +25,11 @@ shape_list <- new_class("shape_list", parent = class_list)
 #' @param e2 object
 #' @export
 `+` <- new_generic("+", c("e1", "e2"))
+
+method(`+`, list(class_ggplot, new_union(shape, shape_list))) <- function(e1,e2) {
+  e1 + as.geom(e2)
+}
+
 
 method(`+`, list(class_any, class_any)) <- function(e1,e2) {
   .Primitive("+")(e1,e2)
@@ -27,7 +45,9 @@ method(`+`, list(class_character, class_numeric)) <- function(e1,e2) {
   paste0(e1,e2)
 }
 
-# generics ----
+
+
+
 #' Get object data with styles in a tibble
 #'
 #' @param x object
@@ -59,7 +79,7 @@ method(get_tibble_defaults, class_any) <- function(x) {
 # unions ----
 class_numeric_or_character <- new_union(class_numeric, class_character)
 class_numeric_or_unit <- new_union(class_numeric, class_unit)
-class_character_or_logical <- new_union(class_character, class_logical)
+
 
 
 # internal states ----
@@ -84,9 +104,9 @@ allsameclass <- function(l, classname) {
 }
 
 #' @keywords internal
-aes_injection <- function(bare_mapping, identity_mapping, omit = NULL) {
-  identity_mapping <- setdiff(identity_mapping, c(bare_mapping, omit))
-  bare_mapping <- setdiff(bare_mapping, omit)
+aes_injection <- function(bare_mapping, identity_mapping, omit_mapping = NULL) {
+  identity_mapping <- setdiff(identity_mapping, c(bare_mapping, omit_mapping))
+  bare_mapping <- setdiff(bare_mapping, omit_mapping)
   i_styles <- purrr::map(
     rlang::syms(identity_mapping),
     \(i) call("I", i))
@@ -105,9 +125,15 @@ get_tibble_defaults_helper <- function(x, default_style, required_aes = c("x", "
   d <- get_tibble(x)
   for (n in setdiff(colnames(d), required_aes)) {
     d_prop <- prop(default_style, n)
-
-    d_prop <- ifelse(is.vector(d_prop), d_prop, c(d_prop))
-    d[is.na(pull(d, n)), n] <- d_prop
+    if (!(is.null(d_prop) || identical(d_prop, list()))) {
+      d_prop <- ifelse(is.vector(d_prop), d_prop, c(d_prop))
+         missings <- is.na(`[[`(d, n))
+         if (!all(missings) && any(missings)) {
+          d[missings, n] <- d_prop    
+         }
+      
+            
+    }
   }
   d
 }
@@ -127,7 +153,14 @@ Filter(\(x) length(x) > 0, l)
 #' @keywords internal
 get_non_empty_tibble <- function(d) {
   d <- Filter(\(x) length(x) > 0, d)
+  d <- Filter(\(x) !is.null(x), d)
+  # print(d)
   tibble::as_tibble(d)
+  }
+
+#' @keywords internal
+  replace_na <- function(x, y) {
+    ifelse(is.na(x), y, x)
   }
 
 #' Probability rounding

@@ -30,9 +30,6 @@ arrow_segment <- new_class(
 
 )
 
-method(`+`, list(class_ggplot, arrow_segment)) <- function(e1, e2) {
-  e1 + as.geom(e2)
-}
 
 
 # Arrow Segment list----
@@ -51,7 +48,7 @@ method(`+`, list(class_ggplot, arrow_segment)) <- function(e1, e2) {
 #' segment_list(c(s1,s2))
 arrow_segment_list <- new_class(
   name = "arrow_segment_list",
-  parent = class_list,
+  parent = shape_list,
   properties = list(
     p1 = new_property(
       point_list,
@@ -84,6 +81,30 @@ arrow_segment_list <- new_class(
 
 arrow_segment_or_arrow_segment_list <- new_union(arrow_segment, arrow_segment_list)
 
-method(`+`, list(class_ggplot, arrow_segment_list)) <- function(e1, e2) {
-  e1 + as.geom(e2)
+method(get_tibble, arrow_segment) <- function(x) {
+  xs <- c(list(x = x@p1@x,
+               xend = x@p2@x,
+               y = x@p1@y,
+               yend = x@p2@y),
+          get_non_empty_props(x@style))
+
+  rlang::inject(tibble::tibble(!!!xs))
+}
+
+
+method(get_tibble_defaults, arrow_segment_list) <- function(x) {
+  sp <- style_arrow(
+    alpha = replace_na(as.double(ggarrow::GeomArrowSegment$default_aes$alpha), 1),
+    arrow_head = replace_na(ggarrow::GeomArrowSegment$default_aes$arrow_head, the$arrow_head),
+    arrow_fins = replace_na(ggarrow::GeomArrowSegment$default_aes$arrow_fins, NULL),
+    color = replace_na(ggarrow::GeomArrowSegment$default_aes$colour, "black"),
+    lineend = "butt",
+    linejoin = "round",
+    linewidth = replace_na(ggarrow::GeomArrowSegment$default_aes$linewidth, 1),
+    linewidth_head = replace_na(ggarrow::GeomArrowSegment$default_aes$linewidth, 1),
+    linewidth_fins = replace_na(ggarrow::GeomArrowSegment$default_aes$linewidth, 1),
+    linetype = replace_na(ggarrow::GeomArrowSegment$default_aes$linetype, 1)
+  )
+
+  get_tibble_defaults_helper(x, sp,required_aes = c("x", "y", "xend", "yend"))
 }

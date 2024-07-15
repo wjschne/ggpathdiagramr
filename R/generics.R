@@ -484,8 +484,7 @@ method(intersection, list(line, ellipse)) <- function(x, y) {
 
   delta_angle <- 2
   current_angle <- 0
-  # plot(y@xy, type = "l", pty = "s")
-  # abline(b = x@slope, a = x@intercept)
+
   m1 <- point(1,0)
   first <- FALSE
   second <- FALSE
@@ -1160,8 +1159,8 @@ method(polar_just, list(class_missing, point, class_missing)) <- function(style,
 # get points ----
 
 method(get_points, segment) <- function(x) {
-  p1@style <- p1@style + x@style
-  p2@style <- p2@style + x@style
+  p1@style <- x@p1@style + x@style
+  p2@style <- x@p2@style + x@style
   point_list(c(x@p1, x@p2))
 }
 

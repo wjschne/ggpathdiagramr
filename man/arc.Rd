@@ -40,11 +40,5 @@ arc class
 \examples{
 # specify center point and radius
 p <- point(0,0)
-circle(p, radius = 6)
-
-# make a regular polygon
-xy <- circle(p, n = 6)@xy
-plot(xy, asp = 1, type = "n")
-polygon(xy)
-
+arc(p, radius = 6, start = degree(30), end = degree(90))
 }

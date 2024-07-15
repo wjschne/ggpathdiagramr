@@ -35,7 +35,7 @@ method(`-`, list(point, centerpoint)) <- function(e1, e2) {
 #' circle class
 #' @param center point at center of the circle
 #' @param radius distance between center and edge circle
-#' @param n number of points in circle
+#' @param n number of points in circle (default = 360)
 #' @param xy 2-column matrix of points
 #' @param style a style object
 #' @param ... <[`dynamic-dots`][rlang::dyn-dots]> arguments passed to style object if style is empty
@@ -43,19 +43,13 @@ method(`-`, list(point, centerpoint)) <- function(e1, e2) {
 #' # specify center point and radius
 #' p <- point(0,0)
 #' circle(p, radius = 6)
-#'
-#' # make a regular polygon
-#' xy <- circle(p, n = 6)@xy
-#' plot(xy, asp = 1, type = "n")
-#' polygon(xy)
-#'
 #' @export
 circle <- new_class(
   name = "circle",
   parent = centerpoint,
   properties = list(
     radius = new_property(class = class_numeric, default = 1L),
-    n = new_property(class = class_numeric, default = 360L),
+    n = new_property(class = class_numeric),
     style = style_or_style_polygon,
     xy = new_property(
       getter = function(self) {
@@ -92,10 +86,6 @@ circle <- new_class(
 )
 
 
-method(`+`, list(class_ggplot, circle)) <- function(e1, e2) {
-  e1 + as.geom(e2)
-}
-
 # Circle list ----
 circle_list <- new_class(
   name = "circle_list",
@@ -131,10 +121,32 @@ circle_list <- new_class(
   }
 )
 
-method(`+`, list(class_ggplot, circle_list)) <- function(e1, e2) {
-  e1 + as.geom(e2)
+
+circle_or_circle_list <- new_union(circle, circle_list)
+
+method(get_tibble, circle) <- function(x) {
+  xs <- c(list(x0 = x@center@x,
+               y0 = x@center@y,
+               r = x@radius,
+               n = x@n),
+          get_non_empty_props(x@style))
+
+  rlang::inject(tibble::tibble(!!!xs))
 }
 
+
+method(get_tibble_defaults, circle_list) <- function(x) {
+  sp <- style_polygon(
+    alpha = replace_na(as.double(ggforce::GeomCircle$default_aes$alpha), 1),
+    color = replace_na(ggforce::GeomCircle$default_aes$colour, "black"),
+    fill = replace_na(ggforce::GeomCircle$default_aes$fill, "black"),
+    lineend = "butt",
+    linejoin = "round",
+    linewidth = replace_na(ggforce::GeomCircle$default_aes$linewidth, 0.5),
+    linetype = replace_na(ggforce::GeomCircle$default_aes$default_aes$linetype, 1)
+  )
+  get_tibble_defaults_helper(x, sp,required_aes = c("x0", "y0", "r", "n"))
+}
 
 # Ellipse ----
 
@@ -206,7 +218,6 @@ ellipse <- new_class(
     )
   }
 )
-
 
 
 
@@ -382,10 +393,6 @@ method(`==`, list(rectangle, rectangle)) <- function(e1, e2) {
   e1@center == e2@center && e1@width == e2@width && e1@height == e2@height
 }
 
-method(`+`, list(class_ggplot, rectangle)) <- function(e1, e2) {
-  e1 + as.geom(e2)
-}
-
 # Arc----
 
 #' arc class
@@ -402,13 +409,7 @@ method(`+`, list(class_ggplot, rectangle)) <- function(e1, e2) {
 #' @examples
 #' # specify center point and radius
 #' p <- point(0,0)
-#' circle(p, radius = 6)
-#'
-#' # make a regular polygon
-#' xy <- circle(p, n = 6)@xy
-#' plot(xy, asp = 1, type = "n")
-#' polygon(xy)
-#'
+#' arc(p, radius = 6, start = degree(30), end = degree(90))
 #' @export
 arc <- new_class(
   name = "arc",
@@ -449,7 +450,7 @@ arc <- new_class(
                          style = class_missing,
                          ...) {
 
-    style <- style_arrow(arrow_head = ggarrow::arrow_head_minimal()) + style + style(...)
+    style <- style_arrow() + style + style(...)
 
     if (length(start) > 0 && length(end) == 0 && length(theta) > 0) {
       end <- start + theta
@@ -487,6 +488,189 @@ arc <- new_class(
 
 )
 
-method(`+`, list(class_ggplot, arc)) <- function(e1, e2) {
-  e1 + as.geom(e2)
-}
+# pp <- new_class("pp",
+#   parent = class_data.frame,
+#   properties = list(
+#     x = new_property(
+#       class = class_numeric,
+#       getter = function(self) {
+#         S7_data(self)$x
+#       },
+#       setter = function(self, value) {
+#         S7_data(self)$x <- value
+#         self
+#       }
+#     ),
+#     y = new_property(
+#       class = class_numeric,
+#       getter = function(self) {
+#         S7_data(self)$y
+#       },
+#       setter = function(self, value) {
+#         S7_data(self)$y <- value
+#       }
+#     )
+#   ),
+#   validator = function(self) {
+#     if (!all(c("x","y") %in% names(S7_data(self)) )) {
+#       stop("x and y are required aesthetics.")
+#     }
+
+#   },
+#   constructor = function(x = class_numeric, y = class_numeric) {
+#     new_object(tibble::tibble(x = x, y = y))
+#   })
+
+
+# # x@x <- 2:4
+# # x@x <- NULL
+# # x$x
+# # View(x)
+# # x@x <- 2:4
+# # S7_class(x@x)
+
+# angle_names <- c("degree", "radian", "gradian", "turn")
+# angle_multiplier <- c(360, 2 * pi, 400, 1)
+# pr <- purrr::map2(angle_names, angle_multiplier, \(x, multiplier) {
+#   new_property(
+#      class = class_numeric,
+#      getter = function(self) {
+#        x <- S7_data(self)
+#        denominator <- ifelse(x < 0, -1, 1)
+#        (x %% denominator) * eval(multiplier)
+#      },
+#      setter = function(self, value) {
+#        S7_data(self) <- value / eval(multiplier)
+#        self
+#      },
+#      name = eval(x)
+#    )
+#  })
+# names(pr) <- angle_names
+
+
+
+# angle <- new_class("angle",
+#   parent = class_double,
+#   properties =  pr,
+#   constructor = function(
+#     degree= class_missing,
+#     radian = class_missing,
+#     gradian = class_missing,
+#     turn = class_missing) {
+
+#     if (length(turn) > 0) {
+#       turn <- as.double(turn)
+#     } else if (length(radian) > 0) {
+#       turn <- radian / (2 * pi )
+#     } else if (length(degree)) {
+#       turn <- degree / 360
+#     } else if (length(gradian)) {
+#       turn <- gradian / 400
+#     }
+#     new_object(turn)
+#   })
+
+# purrr::walk(list(`+`, `-`, `*`, `/`), \(.f) {
+#   method(.f, list(angle, angle)) <- function(e1, e2) {
+#     angle(turn = .f(S7_data(e1), S7_data(e2)))
+#   }
+#   method(.f, list(angle, class_numeric)) <- function(e1, e2) {
+#     angle(turn = .f(S7_data(e1), e2))
+#   }
+#   method(.f, list(class_numeric, angle)) <- function(e1, e2) {
+#     angle(turn = .f(e1, S7_data(e2)))
+#   }
+# })
+
+# method(cos, angle) <- function(x) {
+#   cospi(x@turn * 2)
+# }
+# method(sin, angle) <- function(x) {
+#   sinpi(x@turn * 2)
+# }
+# method(tan, angle) <- function(x) {
+#   tanpi(x@turn * 2)
+# }
+
+
+# # Angle wrappers ----
+# #' degree class
+# #'
+# #' @rdname angle
+# #' @export
+# degree <- new_class(
+#   name = "degree",
+#   parent = angle,
+#   constructor = function(degree = class_missing) {
+#       if (S7_inherits(degree, angle)) degree <- degree@degree
+#       new_object(angle(degree = degree))
+#   }
+# )
+
+# #' radian class
+# #'
+# #' @rdname angle
+# #' @export
+# radian <- new_class(
+#   name = "radian",
+#   parent = angle,
+#   constructor = function(radian = class_missing) {
+#       if (S7_inherits(radian, angle)) radian <- radian@radian
+#       new_object(angle(radian = radian))
+#   }
+# )
+
+# #' turn class
+# #'
+# #' @rdname angle
+# #' @export
+# turn <- new_class(
+#   name = "turn",
+#   parent = angle,
+#   constructor = function(turn = class_missing) {
+
+#       if (S7_inherits(turn, angle)) turn <- turn@turn
+#       new_object(angle(turn = turn))
+
+#   }
+# )
+
+
+# #' gradian class
+# #'
+# #' @rdname angle
+# #' @export
+# gradian <- new_class(
+#   name = "gradian",
+#   parent = angle,
+#   constructor = function(gradian = class_missing) {
+#       if (S7_inherits(gradian, angle)) gradian <- gradian@gradian
+#       new_object(angle(gradian = gradian))
+#   }
+# )
+
+#  method(`[`, angle) <- function(x, i) {
+#    angle(turn = S7_data(x)[i])
+#  }
+
+#  method(`[[`, angle) <- function(x, i) {
+#   S7_data(x)[i]
+# }
+
+
+
+#  purrr::walk(list(turn, radian, gradian, degree), \(.a) {
+#   method(`[`, .a) <- function(x, i) {
+#     .a(angle(turn = S7_data(x)[i]))
+#   }
+
+#   method(`[[`, .a) <- function(x, i) {
+#     prop(x, name = .a@name)[i]
+#     S7::prop(x, )
+#   }
+
+
+#  })
+
+

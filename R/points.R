@@ -88,7 +88,7 @@ point <- new_class(
           dimnames = list(NULL, c("x", "y"))
         )
     ),
-    style = new_property(class = style_or_style_point, default = style(shape = 16))
+    style = new_property(class = style_or_style_point)
   ),
   validator = function(self) {
     if (length(self@x) > 1) {
@@ -115,13 +115,13 @@ point <- new_class(
 
 
     p_style <- style(
-      alpha = alpha, 
-      color = color, 
-      fill = fill, 
-      shape = shape, 
-      size = size, 
-      stroke = stroke) + 
-      style + 
+      alpha = alpha,
+      color = color,
+      fill = fill,
+      shape = shape,
+      size = size,
+      stroke = stroke) +
+      style +
       style(...)
 
     # slot x might be a 2-column matrix
@@ -187,32 +187,32 @@ method(`/`, list(point, point)) <- function(e1, e2) {
 }
 method(`+`, list(class_numeric, point)) <- function(e1, e2) {
   # The point function is needed because e1 might have length > 1.
-  point(x = e1 + e2@x, 
-        y = e1 + e2@y, 
+  point(x = e1 + e2@x,
+        y = e1 + e2@y,
         style = e2@style)
 }
 method(`-`, list(class_numeric, point)) <- function(e1, e2) {
-  point(x = e1 - e2@x, 
-    y = e1 - e2@y, 
+  point(x = e1 - e2@x,
+    y = e1 - e2@y,
     style = e2@style)
 }
 method(`*`, list(class_numeric, point)) <- function(e1, e2) {
-  point(x = e1 * e2@x, 
-    y = e1 * e2@y, 
+  point(x = e1 * e2@x,
+    y = e1 * e2@y,
     style = e2@style)
 }
 method(`/`, list(class_numeric, point)) <- function(e1, e2) {
-  point(x = e1 / e2@x, 
-    y = e1 / e2@y, 
+  point(x = e1 / e2@x,
+    y = e1 / e2@y,
     style = e2@style)
 }
 method(`+`, list(point, class_numeric)) <- function(e1, e2) {
   e2 + e1
 }
 method(`-`, list(point, class_numeric)) <- function(e1, e2) {
-  point(x = e1@x - e2, 
-    y = e1@y - e2, 
-    style = e1@style)  
+  point(x = e1@x - e2,
+    y = e1@y - e2,
+    style = e1@style)
 }
 method(`*`, list(point, class_numeric)) <- function(e1, e2) {
   e2 * e1
@@ -229,10 +229,6 @@ method(`%*%`, list(point, point)) <- function(x, y) {
 
 method(`==`, list(point, point)) <- function(e1, e2) {
   e1@x == e2@x && e1@y == e2@y
-}
-
-method(`+`, list(class_ggplot, point)) <- function(e1, e2) {
-  e1 + as.geom(e2)
 }
 
 method(polar2just, point) <- function(x, multiplier = 1.2, axis = c("h", "v")) {
@@ -311,6 +307,12 @@ point_list <- new_class(
   }
 )
 
+# point list addition ----
+
+method(`+`, list(point_list,  point_list)) <- function(e1, e2) {
+  point_list(purrr::map2(e1, e2, `+`))
+}
+
 method(`+`, list(point, point_list)) <- function(e1, e2) {
   point_list(lapply(e2, \(x) x + e1))
 }
@@ -318,16 +320,34 @@ method(`+`, list(point_list, point)) <- function(e1, e2) {
   e2 + e1
 }
 
+# point list subtraction ----
+
+method(`-`, list(point_list,  point_list)) <- function(e1, e2) {
+  point_list(purrr::map2(e1, e2, `-`))
+}
+
 method(`-`, list(point, point_list)) <- function(e1, e2) {
   point_list(lapply(e2, \(x) x - e1))
 }
 method(`-`, list(point_list, point)) <- function(e1, e2) {
-  e2 - e1
+  point_list(lapply(e1, \(x) e1 - x))
 }
 
-method(`+`, list(class_ggplot, point_list)) <- function(e1, e2) {
-  e1 + as.geom(e2)
+# point list multiplication----
+
+method(`*`, list(point_list,  point_list)) <- function(e1, e2) {
+  point_list(purrr::map2(e1, e2, `*`))
 }
+
+method(`*`, list(point_list,  point)) <- function(e1, e2) {
+  point_list(lapply(e1, \(x) x * e2))
+}
+
+method(`*`, list(point, point_list)) <- function(e1, e2) {
+  point_list(lapply(e2, \(x) x * e1))
+}
+
+# point_list
 
 point_or_point_list <- new_union(point, point_list)
 
@@ -340,14 +360,16 @@ method(get_tibble, point) <- function(x) {
   rlang::inject(tibble::tibble(!!!xs))
 }
 
+
+
 method(get_tibble_defaults, point_list) <- function(x) {
   sp <- style_point(
-    alpha = 1,
-    color = "black",
-    fill = "black",
-    shape = 16,
-    size = 1.5,
-    stroke = 0.5
+    alpha = replace_na(ggplot2::GeomPoint$default_aes$alpha, 1),
+    color = replace_na(ggplot2::GeomPoint$default_aes$colour, "black"),
+    fill = replace_na(ggplot2::GeomPoint$default_aes$fill, "black"),
+    shape = replace_na(ggplot2::GeomPoint$default_aes$shape, 19),
+    size = replace_na(ggplot2::GeomPoint$default_aes$size, 5),
+    stroke = replace_na(ggplot2::GeomPoint$default_aes$stroke, 0.5)
   )
   get_tibble_defaults_helper(x, sp, required_aes = c("x", "y"))
 }

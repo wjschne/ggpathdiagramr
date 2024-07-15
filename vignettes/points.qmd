@@ -9,7 +9,7 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
-```{r, include = FALSE}
+```{r presetup, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
   dev = "ragg_png",
@@ -20,11 +20,12 @@ knitr::opts_chunk$set(
 library(ggpathdiagramr)
 library(ggplot2)
 library(dplyr)
+library(ggtext)
 ```
 
 # Setup
 
-# Packages
+## Packages
 
 ```{r setup}
 library(ggpathdiagramr)
@@ -33,11 +34,11 @@ library(dplyr)
 library(ggtext)
 ```
 
-# Base plot
+## Base plot
 
 To avoid repetitive code, we make a base plot:
 
-```{r}
+```{r baseplot}
 bp <- ggplot() + 
   coord_equal(xlim = c(0, 5),
               ylim = c(0, 5)) + 
@@ -49,7 +50,7 @@ update_geom_defaults("richtext",
                      list(family = 
                             "Roboto Condensed", size = .8 * 20 / ggplot2::.pt))
 
-update_geom_defaults("point", list(size = 2.5))
+update_geom_defaults("point", list(size = 3))
 
 ```
 
@@ -64,12 +65,11 @@ p1 <- point(1, 2)
 p2 <- point(5, 4)
 ```
 
-```{r}
+```{r plot12}
+pts <- point_list(c(p1, p2))
 bp +
-  p1 +
-  p2 +
-  label(c(p1, p2), vjust = 0)
-
+  pts +
+  label(pts, vjust = 0) 
 ```
 
 
@@ -80,19 +80,19 @@ A point's x and y coordinates can be specified in polar coordinates
 * `@r`: The distance from the origin to the point (i.e., the vector's magnitude)
 * `@theta`: The angle (in radians) from the line on the x-axis to the line containing the vector.
 
-```{r}
+```{r rtheta}
 p2
 p2@r
 p2@theta
 ```
 
 
-```{r}
-a <- arrow_segment(p1 = p1, p2 = p2)
+```{r plotpolar}
+a <- arrow_segment(p1 = p1, p2 = p2, resect_head = 2)
 
 bp +
   p2 +
-  as.geom(a, resect_head = 2) +
+  a +
   label(p = midpoint(a),
         label = distance(a),
         angle = a@line@angle,
@@ -102,7 +102,7 @@ bp +
 
 A point can be created with polar coordinates
 
-```{r}
+```{r polar}
 polar(r = 5, theta = angle(degree = 60))
 ```
 
@@ -121,6 +121,15 @@ p1@xy
 as.matrix(p1)
 ```
 
+# Convert to tibble
+
+This will extract any styles that have been set.
+
+```{r}
+get_tibble(point(1,2, color = "red", shape = 16))
+```
+
+
 # Methods
 
 ## Arithmetic
@@ -138,9 +147,19 @@ p3 - p2
 Points can be scaled with constants
 
 ```{r}
-p3 * 2
+p2 * 2
 p3 / 4
 ```
+
+The x and y coordinates can be scaled separately with other points:
+
+```{r}
+p1 / p3
+p1 * p3
+
+point(1:2, 1) * point(3,2)
+```
+
 
 # Distance
 
@@ -285,13 +304,22 @@ To get a tibble with any style information that has been set:
 get_tibble(pts)
 ```
 
-To get the same tibble, but with any missing style information filled with defaults:
+The `get_tibble_defaults` function gets the same tibble, but with any missing style information filled with defaults:
 
 ```{r}
 get_tibble_defaults(pts)
 ```
 
-# Convernt points to geoms
+These defaults can be updated with `ggplot2::update_geom_defaults`:
+
+```{r}
+ggplot2::update_geom_defaults("point", list(size = 2, color = "royalblue"))
+get_tibble_defaults(pts)
+
+```
+
+
+# Convert points to geoms
 
 First, let's this straight. If all you need to do make a scatterplot, just make one the standard way with ggplot2's standard functions. However, if you have reason to make points with ggpathdiagramr and then plot them, then `as.geom` function can help.
 
@@ -318,7 +346,6 @@ ggplot() +
       x,
       y,
       color = I(color),
-      shape = I(shape),
       size = I(size)), 
     data = get_tibble_defaults(pts))
 ```
